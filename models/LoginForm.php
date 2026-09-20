@@ -13,6 +13,7 @@ use yii\base\Security;
  *
  * @property-read User|null $user
  *
+ */
 class LoginForm extends Model
 {
     public string $username = '';
