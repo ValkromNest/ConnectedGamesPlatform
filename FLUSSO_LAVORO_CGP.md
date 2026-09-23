@@ -77,12 +77,20 @@ Obiettivo: rendere disponibili i dati tramite ActiveRecord e relazioni chiare.
 
 Obiettivo: proteggere l'area web di amministrazione.
 
-- [ ] Collegare il login Yii2 agli amministratori presenti nel database.
-- [ ] Limitare dashboard e pagine di gestione agli amministratori autenticati.
-- [ ] Definire logout e gestione delle sessioni.
-- [ ] Escludere esplicitamente i player dal login web/server.
+- [x] Collegare il login Yii2 agli amministratori presenti nel database.
+- [x] Limitare dashboard e pagine di gestione agli amministratori autenticati.
+- [x] Definire logout e gestione delle sessioni.
+- [x] Escludere esplicitamente i player dal login web/server.
 
 **Esito atteso:** un amministratore può entrare nell'area riservata; un player non può farlo.
+
+#### Esito dell'implementazione (2026-09-23)
+
+- L'URL iniziale visualizza il form di accesso; dopo un login valido l'utente viene reindirizzato a `site/dashboard`, attualmente intenzionalmente vuota.
+- Il login legge `tbl_user`, verifica `password_hash` mediante `Yii::$app->security` e consente l'accesso solo a utenti con `role = admin`, senza creare un modello amministratore separato.
+- Dashboard e logout sono protetti dalla sessione Yii2; la dashboard verifica anche esplicitamente il ruolo amministrativo. Il logout invalida la sessione e riporta al form di accesso.
+- I player sono respinti dal login web. Il database non contiene ancora un amministratore: prima dell'uso effettivo occorre creare un utente con password hash valida e ruolo `admin`.
+- Per creare il primo amministratore in modo locale e interattivo: `php yii admin/create <username>`. Il comando non accetta password come argomento, richiede password e conferma nascoste, rifiuta duplicati e richiede conferma prima del salvataggio.
 
 ### Fase 4 — gestione web delle partite
 
