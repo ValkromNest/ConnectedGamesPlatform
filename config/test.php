@@ -8,6 +8,7 @@ $db = require __DIR__ . '/test_db.php';
  */
 return [
     'id' => 'basic-tests',
+    'name' => 'Connected Games Platform - Simone Cagliano',
     'basePath' => dirname(__DIR__),
     'bootstrap' => [
         \app\tests\Support\MailerBootstrap::class,

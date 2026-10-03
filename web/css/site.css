@@ -1,8 +1,91 @@
-main > .container {
-    padding: 70px 15px 20px;
+:root {
+    --app-header-height: 64px;
+    --app-sidebar-width: 240px;
+}
+
+main > .container,
+main > .container-fluid {
+    padding: calc(var(--app-header-height) + 20px) 15px 20px;
     display: flex;
     flex-direction: column;
     min-height: 100%;
+}
+
+.app-main-with-sidebar > .container-fluid {
+    padding-right: 1rem;
+    padding-left: 1rem;
+}
+
+.app-footer-container-with-sidebar {
+    padding-right: 1rem;
+    padding-left: 1rem;
+}
+
+.app-sidebar {
+    position: fixed;
+    z-index: 1020;
+    top: var(--app-header-height);
+    bottom: 0;
+    left: 0;
+    width: var(--app-sidebar-width);
+    overflow-y: auto;
+    background-color: var(--bs-body-bg);
+    border-right: var(--bs-border-width) solid var(--bs-border-color);
+}
+
+.app-sidebar-brand-divider {
+    height: 1px;
+    background-color: var(--bs-border-color);
+}
+
+.app-sidebar-navigation {
+    padding: 1rem;
+}
+
+.app-sidebar-link {
+    color: var(--bs-body-color);
+    border-radius: var(--bs-border-radius);
+}
+
+.app-sidebar-link:hover,
+.app-sidebar-link:focus {
+    color: var(--bs-emphasis-color);
+    background-color: var(--bs-tertiary-bg);
+}
+
+.app-sidebar-link.active {
+    color: var(--bs-primary-text-emphasis);
+    font-weight: 600;
+    background-color: var(--bs-primary-bg-subtle);
+}
+
+.app-sidebar-right {
+    right: 0;
+    left: auto;
+    width: var(--app-sidebar-width);
+    height: calc(100% - var(--app-header-height));
+    overflow: hidden;
+    border-right: 0;
+    border-left: var(--bs-border-width) solid var(--bs-border-color);
+    visibility: hidden;
+    transform: translateX(100%);
+    transition: transform .2s ease-in-out, visibility 0s linear .2s;
+}
+
+.app-sidebar-right.is-open {
+    visibility: visible;
+    transform: translateX(0);
+    transition-delay: 0s;
+}
+
+.app-sidebar-body {
+    height: 100%;
+    overflow-y: auto;
+}
+
+.app-main-with-sidebar,
+.app-footer-with-sidebar {
+    margin-left: var(--app-sidebar-width);
 }
 
 .not-set {
@@ -50,28 +133,54 @@ a.desc:after {
     margin: 0 0 15px 0;
 }
 
-/* align navbar brand baseline with nav links */
-.navbar > .container,
-.navbar > .container-fluid {
-    align-items: baseline;
+.navbar {
+    height: var(--app-header-height);
+    padding-top: 0;
+    padding-bottom: 0;
 }
 
-/* align the logout "link" (button in form) of the navbar */
-.nav li > form > button.logout {
+/* vertically align the logo, navigation links, and right-side controls */
+.navbar > .container,
+.navbar > .container-fluid {
+    align-items: center;
+}
+
+.navbar-brand-logo-link {
+    align-self: stretch;
+    display: flex;
+    align-items: stretch;
+    width: var(--app-sidebar-width);
+    padding: 0;
+    margin-right: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+.navbar-brand-logo {
+    display: block;
+    height: var(--app-header-height);
+    width: 100%;
+    object-fit: cover;
+}
+
+.navbar-right-controls {
+    gap: 1rem;
+}
+
+/* keep controls on the right side of the navbar visually consistent */
+.user-menu-toggle {
     color: var(--bs-navbar-color);
 }
 
 @media (max-width: 767.98px) {
-    .navbar-nav .nav-link.logout {
-        display: block;
-        text-align: left;
-        width: 100%;
-        padding: 10px 0;
+    .user-menu-toggle {
+        padding-top: .5rem;
+        padding-bottom: .5rem;
     }
 }
 
-.navbar-nav .nav-link.logout:focus,
-.navbar-nav .nav-link.logout:hover {
+.user-menu-toggle:focus,
+.user-menu-toggle:hover {
     color: var(--bs-navbar-hover-color);
 }
 

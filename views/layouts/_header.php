@@ -4,55 +4,46 @@ declare(strict_types=1);
 
 /** @var yii\web\View $this */
 
-use yii\bootstrap5\Nav;
 use yii\bootstrap5\NavBar;
 use yii\helpers\Html;
-
-$items = [
-    [
-        'label' => 'Dashboard',
-        'url' => ['/site/dashboard'],
-        'visible' => !Yii::$app->user->isGuest,
-    ],
-    [
-        'label' => 'Login',
-        'url' => ['/site/login'],
-        'visible' => Yii::$app->user->isGuest,
-    ],
-    [
-        'label' => 'Logout (' . Html::encode(Yii::$app->user->identity?->username ?? '') . ')',
-        'url' => ['/site/logout'],
-        'linkOptions' => [
-            'data-method' => 'post',
-            'class' => 'nav-link logout',
-        ],
-        'visible' => !Yii::$app->user->isGuest,
-    ],
-];
 
 ?>
 <header id="header">
     <?php NavBar::begin(
         [
-            'brandLabel' => Yii::$app->name,
-            'brandUrl' => Yii::$app->homeUrl,
-            'options' => ['class' => 'navbar-expand-md navbar-dark bg-dark fixed-top']
+            'brandImage' => '@web/images/cgp_logo.png',
+            'brandImageOptions' => [
+                'alt' => 'Connected Games Platform',
+                'class' => 'navbar-brand-logo',
+            ],
+            'brandUrl' => null,
+            'brandOptions' => ['class' => 'navbar-brand-logo-link'],
+            'options' => ['class' => 'navbar-expand-md navbar-dark bg-dark fixed-top'],
+            'innerContainerOptions' => ['class' => 'container-fluid px-0 d-flex align-items-center'],
+            'collapseOptions' => false,
         ],
     ) ?>
-    <?= Nav::widget(
-        [
-            'options' => ['class' => 'navbar-nav me-auto'],
-            'encodeLabels' => false,
-            'items' => $items,
-        ],
-    ) ?>
-    <?= Html::button(
-        '&#127769;',
-        [
-            'id' => 'theme-toggle',
-            'class' => 'btn btn-link nav-link fs-5',
-            'aria-label' => 'Switch to dark mode',
-        ],
-    ) ?>
+    <div class="ms-auto d-flex align-items-center navbar-right-controls">
+        <?= Html::button(
+            '&#127769;',
+            [
+                'id' => 'theme-toggle',
+                'class' => 'btn btn-link nav-link fs-5',
+                'aria-label' => 'Switch to dark mode',
+            ],
+        ) ?>
+        <?php if (!Yii::$app->user->isGuest): ?>
+            <?= Html::button(
+                Html::encode(Yii::$app->user->identity?->username ?? ''),
+                [
+                    'class' => 'btn btn-link nav-link user-menu-toggle',
+                    'type' => 'button',
+                    'id' => 'user-menu-toggle',
+                    'aria-controls' => 'menu-right',
+                    'aria-expanded' => 'false',
+                ],
+            ) ?>
+        <?php endif; ?>
+    </div>
     <?php NavBar::end() ?>
 </header>

@@ -106,7 +106,7 @@ class SiteController extends Controller
 
         $model->password = '';
 
-        return $this->render('login', ['model' => $model]);
+        return $this->render('login/index', ['model' => $model]);
     }
 
     /**
@@ -114,7 +114,7 @@ class SiteController extends Controller
      */
     public function actionDashboard(): string
     {
-        return $this->render('dashboard');
+        return $this->render('dashboard/index');
     }
 
     /**
