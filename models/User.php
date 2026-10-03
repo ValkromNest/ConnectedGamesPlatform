@@ -81,4 +81,9 @@ class User extends ActiveRecord implements IdentityInterface
     {
         return (string) $this->password_hash;
     }
+
+    public function isAdministrator(): bool
+    {
+        return strcasecmp($this->role, 'admin') === 0;
+    }
 }

@@ -36,12 +36,18 @@ class SiteController extends Controller
         return [
             'access' => [
                 'class' => AccessControl::class,
-                'only' => ['logout'],
+                'only' => ['dashboard', 'logout'],
                 'rules' => [
                     [
                         'actions' => ['logout'],
                         'allow' => true,
                         'roles' => ['@'],
+                    ],
+                    [
+                        'actions' => ['dashboard'],
+                        'allow' => true,
+                        'roles' => ['@'],
+                        'matchCallback' => static fn (): bool => Yii::$app->user->identity?->isAdministrator() ?? false,
                     ],
                 ],
             ],
@@ -74,11 +80,11 @@ class SiteController extends Controller
     /**
      * Displays homepage.
      *
-     * @return string
+     * @return Response|string
      */
-    public function actionIndex(): string
+    public function actionIndex(): Response|string
     {
-        return $this->render('index');
+        return $this->actionLogin();
     }
 
     /**
@@ -89,18 +95,26 @@ class SiteController extends Controller
     public function actionLogin(): Response|string
     {
         if (!Yii::$app->user->isGuest) {
-            return $this->goHome();
+            return $this->redirect(['site/dashboard']);
         }
 
         $model = new LoginForm($this->security);
 
         if ($model->load($this->request->post()) && $model->login()) {
-            return $this->goBack();
+            return $this->redirect(['site/dashboard']);
         }
 
         $model->password = '';
 
         return $this->render('login', ['model' => $model]);
+    }
+
+    /**
+     * Dashboard amministrativa: il contenuto verrà introdotto nella Fase 4.
+     */
+    public function actionDashboard(): string
+    {
+        return $this->render('dashboard');
     }
 
     /**
@@ -112,7 +126,7 @@ class SiteController extends Controller
     {
         Yii::$app->user->logout();
 
-        return $this->goHome();
+        return $this->redirect(['site/login']);
     }
 
     /**

@@ -38,6 +38,7 @@ class LoginForm extends Model
             ['rememberMe', 'boolean'],
             // password is validated by validatePassword()
             ['password', 'validatePassword'],
+            ['password', 'validateAdministrator'],
         ];
     }
 
@@ -56,6 +57,18 @@ class LoginForm extends Model
             if (!$user || !$this->security->validatePassword($this->password, $user->passwordHash)) {
                 $this->addError($attribute, 'Incorrect username or password.');
             }
+        }
+    }
+
+    /**
+     * Limita l'accesso web agli amministratori; i player usano le applicazioni esterne.
+     *
+     * @param array<string, mixed>|null $params
+     */
+    public function validateAdministrator(string $attribute, array|null $params): void
+    {
+        if (!$this->hasErrors() && !$this->getUser()?->isAdministrator()) {
+            $this->addError($attribute, 'Accesso riservato agli amministratori.');
         }
     }
 
