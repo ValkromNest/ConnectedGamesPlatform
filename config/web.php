@@ -8,20 +8,6 @@ $config = [
     'name' => 'Connected Games Platform - Simone Cagliano',
     'basePath' => dirname(__DIR__),
     'bootstrap' => ['log'],
-    'modules' => [
-        'dynagrid' => [
-            'class' => \kartik\dynagrid\Module::class,
-            'bsVersion' => '5.x',
-            'configView' => '@app/views/dynagrid/config',
-            'defaultTheme' => 'simple-default',
-            'configEncryptSalt' => 'cgp-dynagrid-settings-v1',
-        ],
-        'gridview' => [
-            'class' => \kartik\grid\Module::class,
-            'bsVersion' => '5.x',
-            'exportEncryptSalt' => 'cgp-grid-export-v1',
-        ],
-    ],
     'container' => [
         'singletons' => [
             \yii\mail\MailerInterface::class => [

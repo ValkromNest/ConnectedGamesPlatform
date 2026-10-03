@@ -6,9 +6,8 @@ namespace app\controllers;
 
 use Yii;
 use app\enums\MatchStatus;
+use app\models\DartsMatch;
 use app\models\Game;
-use app\models\GameMatch;
-use yii\data\ActiveDataProvider;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
 
@@ -16,23 +15,16 @@ final class DartsMatchController extends AdminController
 {
     public function actionIndex(): string
     {
-        $dataProvider = new ActiveDataProvider([
-            'query' => GameMatch::find()
-                ->innerJoinWith('game')
-                ->andWhere(['{{%tbl_game}}.code' => 'darts'])
-                ->orderBy(['{{%tbl_matches}}.created_at' => SORT_DESC, '{{%tbl_matches}}.id' => SORT_DESC]),
-            'pagination' => [
-                'pageSize' => 20,
-            ],
-        ]);
+        $searchModel = new DartsMatch();
+        $dataProvider = $searchModel->search($this->request->queryParams);
 
-        return $this->render('index', compact('dataProvider'));
+        return $this->render('index', compact('dataProvider', 'searchModel'));
     }
 
     public function actionCreate(): Response|string
     {
         $dartsGame = $this->findDartsGame();
-        $model = new GameMatch([
+        $model = new DartsMatch([
             'game_id' => $dartsGame->id,
             'status' => MatchStatus::CREATED->value,
             'max_players' => 2,
@@ -55,7 +47,7 @@ final class DartsMatchController extends AdminController
 
     private function findDartsGame(): Game
     {
-        $game = Game::find()->where(['code' => 'darts'])->andWhere(['enabled' => 1])->one();
+        $game = DartsMatch::findEnabledGame();
 
         if ($game === null) {
             throw new NotFoundHttpException('Il gioco Freccette non è disponibile.');

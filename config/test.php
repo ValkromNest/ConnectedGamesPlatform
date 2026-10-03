@@ -13,20 +13,6 @@ return [
     'bootstrap' => [
         \app\tests\Support\MailerBootstrap::class,
     ],
-    'modules' => [
-        'dynagrid' => [
-            'class' => \kartik\dynagrid\Module::class,
-            'bsVersion' => '5.x',
-            'configView' => '@app/views/dynagrid/config',
-            'defaultTheme' => 'simple-default',
-            'configEncryptSalt' => 'cgp-dynagrid-settings-v1',
-        ],
-        'gridview' => [
-            'class' => \kartik\grid\Module::class,
-            'bsVersion' => '5.x',
-            'exportEncryptSalt' => 'cgp-grid-export-v1',
-        ],
-    ],
     'aliases' => [
         '@bower' => '@vendor/bower-asset',
         '@npm'   => '@vendor/npm-asset',
