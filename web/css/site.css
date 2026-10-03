@@ -30,12 +30,12 @@ main > .container-fluid {
     width: var(--app-sidebar-width);
     overflow-y: auto;
     background-color: var(--bs-body-bg);
-    border-right: var(--bs-border-width) solid var(--bs-dark);
+    border-right: var(--bs-border-width) solid var(--bs-border-color);
 }
 
 .app-sidebar-brand-divider {
     height: 1px;
-    background-color: var(--bs-dark);
+    background-color: var(--bs-border-color);
 }
 
 .app-sidebar-navigation {
@@ -65,10 +65,8 @@ main > .container-fluid {
     width: var(--app-sidebar-width);
     height: calc(100% - var(--app-header-height));
     overflow: hidden;
-    color: var(--bs-dark);
-    background-color: #fff;
     border-right: 0;
-    border-left: var(--bs-border-width) solid var(--bs-dark);
+    border-left: var(--bs-border-width) solid var(--bs-border-color);
     visibility: hidden;
     transform: translateX(100%);
     transition: transform .2s ease-in-out, visibility 0s linear .2s;
@@ -83,16 +81,6 @@ main > .container-fluid {
 .app-sidebar-body {
     height: 100%;
     overflow-y: auto;
-}
-
-.app-sidebar-right .app-sidebar-link {
-    color: var(--bs-dark);
-}
-
-.app-sidebar-right .app-sidebar-link:hover,
-.app-sidebar-right .app-sidebar-link:focus {
-    color: var(--bs-dark);
-    background-color: var(--bs-gray-200);
 }
 
 .app-main-with-sidebar,
