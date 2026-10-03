@@ -97,13 +97,20 @@ Obiettivo: proteggere l'area web di amministrazione.
 Obiettivo: rendere possibile il ciclo di vita di una partita dal pannello admin.
 
 - [ ] Dashboard con giochi supportati e partite recenti/attive.
-- [ ] Vista Freccette con elenco delle partite.
-- [ ] Creazione partita: nome, gioco, massimo giocatori (massimo 2) e configurazione essenziale.
+- [x] Vista Freccette con elenco delle partite.
+- [x] Creazione partita: nome, gioco, massimo giocatori (massimo 2) e configurazione essenziale.
 - [ ] Transizioni controllate: `CREATED → OPEN → RUNNING → FINISHED`.
 - [ ] Vista dettaglio: partecipanti, punteggi, tiri e stato.
 - [ ] Azioni amministratore: aprire, avviare e terminare una partita.
 
 **Esito atteso:** l'amministratore gestisce una partita completa dall'interfaccia web.
+
+#### Avanzamento iniziale (2026-10-03)
+
+- La dashboard resta volutamente senza widget o riepiloghi.
+- La sidebar contiene la sezione espandibile **Partite freccette**, con collegamenti a elenco e creazione.
+- L'elenco mostra soltanto le partite del gioco con codice `darts`, tramite Dynagrid: ogni amministratore può personalizzare in sessione ordine, visibilità delle colonne e righe per pagina. La creazione richiede nome e numero massimo di giocatori (1 o 2), associa automaticamente Freccette e salva nello stato `CREATED`.
+- Le azioni di dettaglio, le transizioni di stato e la configurazione ulteriore restano fuori da questa sottofase.
 
 ### Fase 5 — logica di gioco freccette
 

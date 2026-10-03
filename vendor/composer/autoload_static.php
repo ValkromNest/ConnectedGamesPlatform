@@ -39,6 +39,16 @@ class ComposerStaticInit2067997ceeaf85daeae28b734d85a10c
             'yii\\bootstrap5\\' => 15,
             'yii\\' => 4,
         ),
+        'k' =>
+        array (
+            'kartik\\sortable\\' => 16,
+            'kartik\\select2\\' => 15,
+            'kartik\\grid\\' => 12,
+            'kartik\\form\\' => 12,
+            'kartik\\dynagrid\\' => 16,
+            'kartik\\dialog\\' => 14,
+            'kartik\\base\\' => 12,
+        ),
         'c' =>
         array (
             'cebe\\markdown\\' => 14,
@@ -143,6 +153,34 @@ class ComposerStaticInit2067997ceeaf85daeae28b734d85a10c
         'yii\\' =>
         array (
             0 => __DIR__ . '/..' . '/yiisoft/yii2',
+        ),
+        'kartik\\sortable\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/kartik-v/yii2-sortable/src',
+        ),
+        'kartik\\select2\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/kartik-v/yii2-widget-select2/src',
+        ),
+        'kartik\\grid\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/kartik-v/yii2-grid/src',
+        ),
+        'kartik\\form\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/kartik-v/yii2-widget-activeform/src',
+        ),
+        'kartik\\dynagrid\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/kartik-v/yii2-dynagrid/src',
+        ),
+        'kartik\\dialog\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/kartik-v/yii2-dialog/src',
+        ),
+        'kartik\\base\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/kartik-v/yii2-krajee-base/src',
         ),
         'cebe\\markdown\\' =>
         array (

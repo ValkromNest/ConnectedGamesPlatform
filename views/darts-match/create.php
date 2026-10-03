@@ -1,0 +1,57 @@
+<?php
+
+declare(strict_types=1);
+
+/** @var yii\web\View $this */
+/** @var app\models\GameMatch $model */
+
+use yii\bootstrap5\ActiveForm;
+use yii\helpers\Html;
+
+$this->title = 'Nuova partita freccette';
+$this->params['breadcrumbs'] = [
+    ['label' => 'Partite freccette', 'url' => ['index']],
+    $this->title,
+];
+?>
+<section class="darts-match-create py-5">
+    <div class="mb-4">
+        <h1 class="h2 mb-1">Nuova partita freccette</h1>
+        <p class="text-body-secondary mb-0">
+            La partita verrà creata nello stato <strong>Creata</strong>; potrà essere aperta e avviata nelle prossime fasi.
+        </p>
+    </div>
+
+    <div class="card shadow-sm" style="max-width: 42rem;">
+        <div class="card-body p-4">
+            <?php $form = ActiveForm::begin(['id' => 'darts-match-create-form']); ?>
+
+                <?= $form->field($model, 'name')->textInput([
+                    'maxlength' => true,
+                    'autofocus' => true,
+                    'placeholder' => 'Es. Sfida del venerdì',
+                ]) ?>
+
+                <div class="mb-3">
+                    <?= Html::label('Gioco', 'darts-game', ['class' => 'form-label']) ?>
+                    <?= Html::textInput('darts-game', 'Freccette', [
+                        'id' => 'darts-game',
+                        'class' => 'form-control',
+                        'disabled' => true,
+                    ]) ?>
+                </div>
+
+                <?= $form->field($model, 'max_players')->dropDownList([
+                    1 => '1 giocatore',
+                    2 => '2 giocatori',
+                ]) ?>
+
+                <div class="d-flex gap-2 mt-4">
+                    <?= Html::submitButton('Crea partita', ['class' => 'btn btn-primary']) ?>
+                    <?= Html::a('Annulla', ['index'], ['class' => 'btn btn-outline-secondary']) ?>
+                </div>
+
+            <?php ActiveForm::end(); ?>
+        </div>
+    </div>
+</section>

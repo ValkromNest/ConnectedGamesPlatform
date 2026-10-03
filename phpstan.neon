@@ -5,6 +5,7 @@ parameters:
         - assets
         - commands
         - controllers
+        - enums
         - mail
         - models
         - widgets
