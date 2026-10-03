@@ -33,7 +33,7 @@ Obiettivo: allineare Yii2 alle tabelle già esistenti, senza modificarle involon
 
 - [x] Leggere le tabelle, le colonne, gli indici, le chiavi esterne e i dati iniziali.
 - [x] Confrontare lo schema reale con il dominio atteso: utenti/amministratori, giochi, partite, partecipanti e tiri.
-- [ ] Decidere eventuali adattamenti minimi allo schema solo dopo averli concordati.
+- [x] Decidere eventuali adattamenti minimi allo schema solo dopo averli concordati.
 - [x] Annotare qui nomi effettivi di tabelle e relazioni.
 
 **Esito atteso:** una mappa affidabile database → modello Yii2.
@@ -86,7 +86,7 @@ Obiettivo: proteggere l'area web di amministrazione.
 
 #### Esito dell'implementazione (2026-09-23)
 
-- L'URL iniziale visualizza il form di accesso; dopo un login valido l'utente viene reindirizzato a `site/dashboard`, attualmente intenzionalmente vuota.
+- L'URL iniziale visualizza il form di accesso; dopo un login valido l'utente viene reindirizzato a `dashboard/index`, attualmente intenzionalmente vuota.
 - Il login legge `tbl_user`, verifica `password_hash` mediante `Yii::$app->security` e consente l'accesso solo a utenti con `role = admin`, senza creare un modello amministratore separato.
 - Dashboard e logout sono protetti dalla sessione Yii2; la dashboard verifica anche esplicitamente il ruolo amministrativo. Il logout invalida la sessione e riporta al form di accesso.
 - I player sono respinti dal login web. Il database non contiene ancora un amministratore: prima dell'uso effettivo occorre creare un utente con password hash valida e ruolo `admin`.
@@ -147,6 +147,12 @@ Obiettivo: dimostrare la separazione client/server.
 - [ ] Documentare installazione, configurazione DB e avvio del server.
 - [ ] Aggiornare OpenAPI, README e diagrammi: use case, classi, sequenza di registrazione tiro e architettura.
 - [ ] Valutare MQTT, Keycloak e ulteriori giochi solo dopo il completamento del flusso minimo.
+
+## Estensione schema (2026-10-03)
+
+- Aggiunta mediante migration Yii la tabella `sys_autoconfigurazione`: `id` autoincrementale, `nome` univoco (`varchar(255)`), `valore` e `descrizione` (`LONGTEXT`, nullable).
+- Il modello `Autoconfigurazione` espone gli accessor tipizzati stringa, booleano, intero, float e array. Se una chiave manca, viene creata con il valore predefinito ricevuto; se esiste, il valore nel database ha sempre precedenza.
+- La pagina amministrativa `gestore_temi` salva in autoconfigurazione il colore principale diurno (`tema.colore_diurno`) e notturno (`tema.colore_notturno`), applicandolo a sidebar e pulsanti primari.
 
 ## Promemoria per ogni sessione
 

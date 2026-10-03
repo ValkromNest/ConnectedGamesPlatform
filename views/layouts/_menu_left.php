@@ -6,7 +6,7 @@ declare(strict_types=1);
 
 use yii\helpers\Html;
 
-$isDashboard = Yii::$app->controller?->route === 'site/dashboard';
+$isDashboard = Yii::$app->controller?->route === 'dashboard/index';
 
 ?>
 <aside id="menu-left" class="app-sidebar" aria-label="Navigazione principale">
@@ -16,7 +16,7 @@ $isDashboard = Yii::$app->controller?->route === 'site/dashboard';
             <li class="nav-item">
                 <?= Html::a(
                     'Dashboard',
-                    ['/site/dashboard'],
+                    ['/dashboard/index'],
                     ['class' => 'nav-link app-sidebar-link' . ($isDashboard ? ' active' : '')],
                 ) ?>
             </li>
