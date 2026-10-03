@@ -6,7 +6,6 @@ declare(strict_types=1);
 /** @var string $content */
 
 use app\widgets\Alert;
-use yii\bootstrap5\Breadcrumbs;
 use yii\helpers\Html;
 
 $hasSidebar = !Yii::$app->user->isGuest;
@@ -27,13 +26,11 @@ $this->render('_head');
 
 <?php if ($hasSidebar): ?>
     <?= $this->render('_menu_left') ?>
+    <?= $this->render('_menu_right') ?>
 <?php endif; ?>
 
 <main id="main" class="flex-grow-1<?= $hasSidebar ? ' app-main-with-sidebar' : '' ?>" role="main">
-    <div class="container">
-        <?php if (!empty($this->params['breadcrumbs'])): ?>
-            <?= Breadcrumbs::widget(['links' => $this->params['breadcrumbs']]) ?>
-        <?php endif ?>
+    <div class="<?= $hasSidebar ? 'container-fluid' : 'container' ?>">
         <?= Alert::widget() ?>
         <?= $content ?>
     </div>

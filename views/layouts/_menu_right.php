@@ -5,34 +5,33 @@ declare(strict_types=1);
 /** @var yii\web\View $this */
 
 use yii\helpers\Html;
+use yii\helpers\Url;
+use yii\web\View;
+
+$this->registerJsFile(Url::to('@web/js/user-menu.js'), ['position' => View::POS_END]);
 
 ?>
-<?= Html::button(
-    '&#127769;',
-    [
-        'id' => 'theme-toggle',
-        'class' => 'btn btn-link nav-link fs-5',
-        'aria-label' => 'Switch to dark mode',
-    ],
-) ?>
-<?php if (!Yii::$app->user->isGuest): ?>
-    <div class="dropdown ms-2">
-        <?= Html::button(
-            Html::encode(Yii::$app->user->identity?->username ?? ''),
-            [
-                'class' => 'btn btn-link nav-link dropdown-toggle user-menu-toggle',
-                'type' => 'button',
-                'id' => 'user-menu-toggle',
-                'data-bs-toggle' => 'dropdown',
-                'aria-expanded' => 'false',
-            ],
-        ) ?>
-        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="user-menu-toggle">
-            <li>
-                <?= Html::beginForm(['/site/logout'], 'post') ?>
-                <?= Html::submitButton('Logout', ['class' => 'dropdown-item']) ?>
-                <?= Html::endForm() ?>
-            </li>
-        </ul>
+<aside
+    id="menu-right"
+    class="app-sidebar app-sidebar-right"
+    aria-labelledby="user-menu-toggle"
+    aria-hidden="true"
+>
+    <div class="app-sidebar-body">
+        <div class="app-sidebar-brand-divider" aria-hidden="true"></div>
+        <nav class="app-sidebar-navigation" aria-label="Menu utente">
+            <ul class="nav flex-column gap-1">
+                <li class="nav-item">
+                    <?= Html::a(
+                        'Logout',
+                        ['/site/logout'],
+                        [
+                            'class' => 'nav-link app-sidebar-link',
+                            'data-method' => 'post',
+                        ],
+                    ) ?>
+                </li>
+            </ul>
+        </nav>
     </div>
-<?php endif; ?>
+</aside>

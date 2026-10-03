@@ -51,7 +51,7 @@ final class LogoutTest extends \Codeception\Test\Unit
             'Failed asserting that the user menu toggle is rendered.',
         );
         self::assertStringContainsString(
-            '<form action="/index-test.php?r=site%2Flogout" method="post">',
+            'data-method="post"',
             $html,
             'Failed asserting that the logout action uses POST method.',
         );
