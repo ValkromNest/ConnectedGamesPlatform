@@ -55,7 +55,16 @@ JS, View::POS_READY);
     <?= GridView::widget([
         'id' => 'darts-matches-grid',
         'columns' => [
-            'name:text:Nome',
+            [
+                'attribute' => 'name',
+                'label' => 'Nome',
+                'format' => 'raw',
+                'value' => static fn (DartsMatch $model): string => Html::a(
+                    Html::encode($model->name),
+                    ['update', 'id' => $model->id],
+                    ['class' => 'btn btn-outline-primary btn-sm w-100 text-center'],
+                ),
+            ],
             [
                 'attribute' => 'status',
                 'label' => 'Stato',

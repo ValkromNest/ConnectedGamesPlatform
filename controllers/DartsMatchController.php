@@ -45,6 +45,27 @@ final class DartsMatchController extends AdminController
         return $this->render('create', compact('model'));
     }
 
+    public function actionUpdate(int $id): Response|string
+    {
+        $model = $this->findDartsMatch($id);
+        $gameId = $model->game_id;
+        $status = $model->status;
+
+        if ($model->load($this->request->post())) {
+            // Gioco e stato sono gestiti dal flusso della partita, non da questo form.
+            $model->game_id = $gameId;
+            $model->status = $status;
+
+            if ($model->save()) {
+                Yii::$app->session->setFlash('success', 'Partita di freccette aggiornata.');
+
+                return $this->redirect(['index']);
+            }
+        }
+
+        return $this->render('update', compact('model'));
+    }
+
     private function findDartsGame(): Game
     {
         $game = DartsMatch::findEnabledGame();
@@ -54,5 +75,18 @@ final class DartsMatchController extends AdminController
         }
 
         return $game;
+    }
+
+    private function findDartsMatch(int $id): DartsMatch
+    {
+        $model = DartsMatch::findDarts()
+            ->andWhere(['{{%tbl_matches}}.id' => $id])
+            ->one();
+
+        if (!$model instanceof DartsMatch) {
+            throw new NotFoundHttpException('Partita di freccette non trovata.');
+        }
+
+        return $model;
     }
 }

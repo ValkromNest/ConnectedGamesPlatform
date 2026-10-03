@@ -5,9 +5,6 @@ declare(strict_types=1);
 /** @var yii\web\View $this */
 /** @var app\models\GameMatch $model */
 
-use yii\bootstrap5\ActiveForm;
-use yii\helpers\Html;
-
 $this->title = 'Nuova partita freccette';
 $this->params['breadcrumbs'] = [
     ['label' => 'Partite freccette', 'url' => ['index']],
@@ -22,36 +19,5 @@ $this->params['breadcrumbs'] = [
         </p>
     </div>
 
-    <div class="card shadow-sm" style="max-width: 42rem;">
-        <div class="card-body p-4">
-            <?php $form = ActiveForm::begin(['id' => 'darts-match-create-form']); ?>
-
-                <?= $form->field($model, 'name')->textInput([
-                    'maxlength' => true,
-                    'autofocus' => true,
-                    'placeholder' => 'Es. Sfida del venerdì',
-                ]) ?>
-
-                <div class="mb-3">
-                    <?= Html::label('Gioco', 'darts-game', ['class' => 'form-label']) ?>
-                    <?= Html::textInput('darts-game', 'Freccette', [
-                        'id' => 'darts-game',
-                        'class' => 'form-control',
-                        'disabled' => true,
-                    ]) ?>
-                </div>
-
-                <?= $form->field($model, 'max_players')->dropDownList([
-                    1 => '1 giocatore',
-                    2 => '2 giocatori',
-                ]) ?>
-
-                <div class="d-flex gap-2 mt-4">
-                    <?= Html::submitButton('Crea partita', ['class' => 'btn btn-primary']) ?>
-                    <?= Html::a('Annulla', ['index'], ['class' => 'btn btn-outline-secondary']) ?>
-                </div>
-
-            <?php ActiveForm::end(); ?>
-        </div>
-    </div>
+    <?= $this->render('_form', ['model' => $model, 'submitLabel' => 'Crea partita']) ?>
 </section>

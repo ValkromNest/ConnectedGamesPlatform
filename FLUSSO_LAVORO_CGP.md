@@ -111,6 +111,7 @@ Obiettivo: rendere possibile il ciclo di vita di una partita dal pannello admin.
 - La sidebar contiene la sezione espandibile **Partite freccette**, con collegamenti a elenco e creazione.
 - L'elenco mostra soltanto le partite del gioco con codice `darts`, tramite GridView Yii2 con filtri, ordinamento, paginazione e aggiornamento Pjax. La creazione richiede nome e numero massimo di giocatori (1 o 2), associa automaticamente Freccette e salva nello stato `CREATED`.
 - `DartsMatch` estende `GameMatch` e raccoglie il comportamento specifico delle Freccette, incluso l'elenco filtrabile; le configurazioni e le regole del gioco saranno aggiunte allo stesso modello o a servizi dedicati nelle fasi successive.
+- Il nome di ogni partita nell'elenco apre la relativa pagina di modifica, nella quale sono aggiornabili solo nome e massimo giocatori; gioco e stato sono preservati dal controller.
 - Le azioni di dettaglio, le transizioni di stato e la configurazione ulteriore restano fuori da questa sottofase.
 
 ### Fase 5 — logica di gioco freccette
