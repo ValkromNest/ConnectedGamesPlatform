@@ -9,6 +9,8 @@ use app\widgets\Alert;
 use yii\bootstrap5\Breadcrumbs;
 use yii\helpers\Html;
 
+$hasSidebar = !Yii::$app->user->isGuest;
+
 $this->render('_head');
 ?>
 <?php $this->beginPage() ?>
@@ -23,7 +25,11 @@ $this->render('_head');
 
 <?= $this->render('_header') ?>
 
-<main id="main" class="flex-grow-1" role="main">
+<?php if ($hasSidebar): ?>
+    <?= $this->render('_menu_left') ?>
+<?php endif; ?>
+
+<main id="main" class="flex-grow-1<?= $hasSidebar ? ' app-main-with-sidebar' : '' ?>" role="main">
     <div class="container">
         <?php if (!empty($this->params['breadcrumbs'])): ?>
             <?= Breadcrumbs::widget(['links' => $this->params['breadcrumbs']]) ?>
@@ -33,7 +39,7 @@ $this->render('_head');
     </div>
 </main>
 
-<?= $this->render('_footer') ?>
+<?= $this->render('_footer', ['hasSidebar' => $hasSidebar]) ?>
 
 <?php $this->endBody() ?>
 </body>

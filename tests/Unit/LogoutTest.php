@@ -13,7 +13,7 @@ use yii\web\View;
 
 final class LogoutTest extends \Codeception\Test\Unit
 {
-    public function testRenderLogoutLinkWhenUserIsLoggedIn(): void
+    public function testRenderUserMenuWhenUserIsLoggedIn(): void
     {
         $user = User::findIdentity('100');
 
@@ -41,14 +41,19 @@ final class LogoutTest extends \Codeception\Test\Unit
         $html = $view->render('//layouts/main.php', ['content' => 'Hello World°']);
 
         self::assertStringContainsString(
-            'Logout (admin)',
+            '>admin</button>',
             $html,
-            'Failed asserting that the logout link is rendered for a logged-in user.',
+            'Failed asserting that the username is rendered in the user menu.',
         );
         self::assertStringContainsString(
-            'data-method="post"',
+            'id="user-menu-toggle"',
             $html,
-            'Failed asserting that the logout link uses POST method.',
+            'Failed asserting that the user menu toggle is rendered.',
+        );
+        self::assertStringContainsString(
+            '<form action="/index-test.php?r=site%2Flogout" method="post">',
+            $html,
+            'Failed asserting that the logout action uses POST method.',
         );
 
         $controller->actionLogout();
@@ -56,9 +61,9 @@ final class LogoutTest extends \Codeception\Test\Unit
         $html = $view->render('//layouts/main.php', ['content' => 'Hello World°']);
 
         self::assertStringNotContainsString(
-            'Logout (admin)',
+            'id="user-menu-toggle"',
             $html,
-            'Failed asserting that the logout link is not rendered after logout.',
+            'Failed asserting that the user menu is not rendered after logout.',
         );
     }
 }

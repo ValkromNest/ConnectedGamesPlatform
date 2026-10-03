@@ -28,9 +28,9 @@ final class LoginTest extends \Codeception\Test\Unit
         $controller->actionLogin();
 
         self::assertStringNotContainsString(
-            'Logout (admin)',
+            '>admin</button>',
             $view->render('//layouts/main.php', ['content' => 'Hello World°']),
-            'Failed asserting that the logout link is not rendered for a wrong username.',
+            'Failed asserting that the administrator username is not rendered for a wrong username.',
         );
     }
 }
