@@ -9,6 +9,7 @@ use yii\helpers\Url;
 use yii\web\View;
 
 $this->registerJsFile(Url::to('@web/js/user-menu.js'), ['position' => View::POS_END]);
+$isThemeManager = Yii::$app->controller?->route === 'gestore-temi/index';
 
 ?>
 <aside
@@ -23,8 +24,15 @@ $this->registerJsFile(Url::to('@web/js/user-menu.js'), ['position' => View::POS_
             <ul class="nav flex-column gap-1">
                 <li class="nav-item">
                     <?= Html::a(
+                        'Gestore temi',
+                        ['/gestore-temi/index'],
+                        ['class' => 'nav-link app-sidebar-link' . ($isThemeManager ? ' active' : '')],
+                    ) ?>
+                </li>
+                <li class="nav-item">
+                    <?= Html::a(
                         'Logout',
-                        ['/site/logout'],
+                        ['/login/logout'],
                         [
                             'class' => 'nav-link app-sidebar-link',
                             'data-method' => 'post',

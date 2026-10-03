@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace app\tests\Unit;
 
-use app\controllers\SiteController;
+use app\controllers\LoginController;
 use app\models\User;
 use Yii;
 use yii\base\Security;
@@ -17,10 +17,9 @@ final class LogoutTest extends \Codeception\Test\Unit
     {
         $user = User::findIdentity('100');
 
-        $controller = new SiteController(
-            'site',
+        $controller = new LoginController(
+            'login',
             Yii::$app,
-            Yii::$app->mailer,
             new Security(),
         );
 

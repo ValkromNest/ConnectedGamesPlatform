@@ -5,8 +5,25 @@ declare(strict_types=1);
 /** @var yii\web\View $this */
 
 use app\assets\AppAsset;
+use app\models\Autoconfigurazione;
 
 AppAsset::register($this);
+
+$lightThemeColor = Autoconfigurazione::getValueAsString(
+    Autoconfigurazione::THEME_LIGHT_COLOR,
+    '#0d6efd',
+);
+$darkThemeColor = Autoconfigurazione::getValueAsString(
+    Autoconfigurazione::THEME_DARK_COLOR,
+    '#6ea8fe',
+);
+$isHexColor = static fn (?string $color): bool => preg_match('/\A#[0-9a-fA-F]{6}\z/', (string) $color) === 1;
+
+$this->registerCss(sprintf(
+    '[data-bs-theme="light"] { --app-theme-accent: %s; } [data-bs-theme="dark"] { --app-theme-accent: %s; }',
+    $isHexColor($lightThemeColor) ? $lightThemeColor : '#0d6efd',
+    $isHexColor($darkThemeColor) ? $darkThemeColor : '#6ea8fe',
+));
 
 $this->registerCsrfMetaTags();
 $this->registerMetaTag(

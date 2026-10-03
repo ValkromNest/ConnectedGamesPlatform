@@ -54,9 +54,18 @@ main > .container-fluid {
 }
 
 .app-sidebar-link.active {
-    color: var(--bs-primary-text-emphasis);
+    color: var(--app-theme-accent, var(--bs-primary-text-emphasis));
     font-weight: 600;
-    background-color: var(--bs-primary-bg-subtle);
+    background-color: color-mix(in srgb, var(--app-theme-accent, var(--bs-primary)) 16%, transparent);
+}
+
+.btn-primary {
+    --bs-btn-bg: var(--app-theme-accent, var(--bs-primary));
+    --bs-btn-border-color: var(--app-theme-accent, var(--bs-primary));
+    --bs-btn-hover-bg: color-mix(in srgb, var(--app-theme-accent, var(--bs-primary)) 85%, black);
+    --bs-btn-hover-border-color: color-mix(in srgb, var(--app-theme-accent, var(--bs-primary)) 85%, black);
+    --bs-btn-active-bg: color-mix(in srgb, var(--app-theme-accent, var(--bs-primary)) 75%, black);
+    --bs-btn-active-border-color: color-mix(in srgb, var(--app-theme-accent, var(--bs-primary)) 75%, black);
 }
 
 .app-sidebar-right {
@@ -134,9 +143,14 @@ a.desc:after {
 }
 
 .navbar {
+    --bs-navbar-color: rgba(255, 255, 255, .8);
+    --bs-navbar-hover-color: #fff;
+    --bs-navbar-brand-color: #fff;
+    --bs-navbar-brand-hover-color: #fff;
     height: var(--app-header-height);
     padding-top: 0;
     padding-bottom: 0;
+    background-color: var(--app-theme-accent, var(--bs-dark)) !important;
 }
 
 /* vertically align the logo, navigation links, and right-side controls */
@@ -165,6 +179,7 @@ a.desc:after {
 
 .navbar-right-controls {
     gap: 1rem;
+    padding-right: 1rem;
 }
 
 /* keep controls on the right side of the navbar visually consistent */

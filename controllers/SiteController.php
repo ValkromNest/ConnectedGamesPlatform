@@ -4,62 +4,13 @@ declare(strict_types=1);
 
 namespace app\controllers;
 
-use Yii;
-use app\models\ContactForm;
-use app\models\LoginForm;
 use yii\captcha\CaptchaAction;
-use yii\filters\AccessControl;
-use yii\filters\VerbFilter;
-use yii\base\Security;
-use yii\mail\MailerInterface;
 use yii\web\Controller;
 use yii\web\ErrorAction;
 use yii\web\Response;
 
 class SiteController extends Controller
 {
-    public function __construct(
-        $id,
-        $module,
-        private readonly MailerInterface $mailer,
-        private readonly Security $security,
-        $config = [],
-    ) {
-        parent::__construct($id, $module, $config);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function behaviors(): array
-    {
-        return [
-            'access' => [
-                'class' => AccessControl::class,
-                'only' => ['dashboard', 'logout'],
-                'rules' => [
-                    [
-                        'actions' => ['logout'],
-                        'allow' => true,
-                        'roles' => ['@'],
-                    ],
-                    [
-                        'actions' => ['dashboard'],
-                        'allow' => true,
-                        'roles' => ['@'],
-                        'matchCallback' => static fn (): bool => Yii::$app->user->identity?->isAdministrator() ?? false,
-                    ],
-                ],
-            ],
-            'verbs' => [
-                'class' => VerbFilter::class,
-                'actions' => [
-                    'logout' => ['post'],
-                ],
-            ],
-        ];
-    }
-
     /**
      * {@inheritdoc}
      */
@@ -84,86 +35,6 @@ class SiteController extends Controller
      */
     public function actionIndex(): Response|string
     {
-        return $this->actionLogin();
-    }
-
-    /**
-     * Login action.
-     *
-     * @return Response|string
-     */
-    public function actionLogin(): Response|string
-    {
-        if (!Yii::$app->user->isGuest) {
-            return $this->redirect(['site/dashboard']);
-        }
-
-        $model = new LoginForm($this->security);
-
-        if ($model->load($this->request->post()) && $model->login()) {
-            return $this->redirect(['site/dashboard']);
-        }
-
-        $model->password = '';
-
-        return $this->render('login/index', ['model' => $model]);
-    }
-
-    /**
-     * Dashboard amministrativa: il contenuto verrà introdotto nella Fase 4.
-     */
-    public function actionDashboard(): string
-    {
-        return $this->render('dashboard/index');
-    }
-
-    /**
-     * Logout action.
-     *
-     * @return Response
-     */
-    public function actionLogout(): Response
-    {
-        Yii::$app->user->logout();
-
-        return $this->redirect(['site/login']);
-    }
-
-    /**
-     * Displays contact page.
-     *
-     * @return Response|string
-     */
-    public function actionContact(): Response|string
-    {
-        $model = new ContactForm();
-
-        $contact = $model->load($this->request->post()) && $model->contact(
-            $this->mailer,
-            Yii::$app->params['adminEmail'],
-            Yii::$app->params['senderEmail'],
-            Yii::$app->params['senderName'],
-        );
-
-        if ($contact) {
-            Yii::$app->session->setFlash(
-                'success',
-                'Thank you for contacting us. We will respond to you as soon as possible.',
-            );
-
-            return $this->refresh();
-        }
-
-        return $this->render('contact', ['model' => $model]);
-    }
-
-    /**
-     * Displays about page.
-     *
-     * @return string
-     */
-    public function actionAbout(): string
-    {
-        return $this->render('about');
+        return $this->redirect(['/login/index']);
     }
 }

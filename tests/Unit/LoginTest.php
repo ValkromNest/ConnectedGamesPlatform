@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace app\tests\Unit;
 
-use app\controllers\SiteController;
+use app\controllers\LoginController;
 use app\models\User;
 use Yii;
 use yii\base\Security;
@@ -14,10 +14,9 @@ final class LoginTest extends \Codeception\Test\Unit
 {
     public function testRenderLoginWrongUsername(): void
     {
-        $controller = new SiteController(
-            'site',
+        $controller = new LoginController(
+            'login',
             Yii::$app,
-            Yii::$app->mailer,
             new Security(),
         );
 
@@ -25,7 +24,7 @@ final class LoginTest extends \Codeception\Test\Unit
 
         Yii::$app->user->login(new User());
 
-        $controller->actionLogin();
+        $controller->actionIndex();
 
         self::assertStringNotContainsString(
             '>admin</button>',
