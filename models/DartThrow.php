@@ -30,6 +30,7 @@ class DartThrow extends ActiveRecord
             [['match_id', 'user_id', 'sector', 'multiplier', 'score'], 'integer'],
             [['sector'], 'in', 'range' => [...range(1, 20), 25]],
             [['multiplier'], 'integer', 'min' => 1, 'max' => 3],
+            [['sector'], 'validateBullMultiplier'],
             [['score'], 'integer', 'min' => 0],
             [['created_at'], 'safe'],
             [['match_id'], 'exist', 'skipOnError' => true, 'targetClass' => GameMatch::class, 'targetAttribute' => ['match_id' => 'id']],
@@ -44,5 +45,12 @@ class DartThrow extends ActiveRecord
     public function getUser(): ActiveQuery
     {
         return $this->hasOne(User::class, ['id' => 'user_id']);
+    }
+
+    public function validateBullMultiplier(string $attribute): void
+    {
+        if ((int) $this->sector === 25 && (int) $this->multiplier === 3) {
+            $this->addError('multiplier', 'Il bull vale 25 (singolo) o 50 (doppio); non esiste il triplo bull.');
+        }
     }
 }

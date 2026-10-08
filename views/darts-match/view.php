@@ -43,7 +43,7 @@ $postButton = static fn (string $label, string $route, string $class): string =>
     <div class="card shadow-sm mb-4"><div class="card-body">
         <h2 class="h5 mb-3">Partecipanti</h2>
         <?php if ($model->matchPlayers === []): ?><p class="text-body-secondary mb-0">Nessun partecipante registrato.</p><?php else: ?>
-            <div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr><th>Ordine</th><th>Giocatore</th><th>Punteggio</th></tr></thead><tbody>
+            <div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr><th>Ordine</th><th>Giocatore</th><th>Punti rimanenti</th></tr></thead><tbody>
             <?php foreach ($model->matchPlayers as $player): /** @var MatchPlayer $player */ ?><tr><td><?= Html::encode($player->turn_order ?? '—') ?></td><td><?= Html::encode($player->user?->username ?? 'Utente non disponibile') ?></td><td><?= Html::encode($player->score) ?></td></tr><?php endforeach; ?>
             </tbody></table></div>
         <?php endif; ?>

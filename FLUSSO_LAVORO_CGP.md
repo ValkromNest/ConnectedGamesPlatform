@@ -6,7 +6,7 @@ Questo file è il riferimento tra le sessioni di sviluppo. Aggiornare la sezione
 
 - Il server centrale è questo progetto Yii2.
 - Il gioco iniziale è **Freccette**.
-- Regole iniziali: punteggio ad accumulo, al massimo 2 giocatori, turni alternati, settore `1–20` oppure bull, moltiplicatore `1–3`.
+- Regole iniziali Freccette: formato `501` a punteggio decrescente, massimo 2 giocatori, visite alternate fino a 3 freccette, settori `1–20` o bull, moltiplicatore `1–3`, chiusura esatta con un doppio e bust.
 - Il database contiene già le tabelle necessarie: non creare lo schema da zero. Prima di procedere, ispezionare struttura, chiavi e nomi reali delle tabelle.
 - Mancano i modelli Yii2 corrispondenti alle tabelle esistenti.
 - Gli amministratori usano l'interfaccia web Yii2 e sono gli unici ad autenticarsi sul server.
@@ -129,6 +129,15 @@ Obiettivo: centralizzare e validare le regole nel server.
 
 **Esito atteso:** nessun client calcola o modifica direttamente il punteggio.
 
+#### Implementazione iniziale (2026-10-08)
+
+- Il formato adottato è `501`: ogni player parte da 501 e sottrae i punti dei tiri; vince chi arriva esattamente a zero con un doppio. Il bull esterno vale 25, quello interno è rappresentato da settore 25 × 2 (50). Non esiste il triplo bull.
+- Una visita comprende al massimo tre freccette consecutive. Se il player supera il punteggio rimanente, lascia 1, oppure arriva a zero senza un doppio, la visita è un bust: il punteggio torna a quello di inizio visita e il turno passa all'avversario.
+- `DartsThrowCalculator` valida settore e moltiplicatore; `DartsGameService` gestisce partecipanti e turni, registra ogni freccetta, aggiorna i punti rimanenti e chiude automaticamente la partita su un checkout valido nella stessa transazione.
+- I turni sono ricostruiti dalla sequenza dei tiri esistenti e dall'ordine `turn_order`; non è necessaria una modifica dello schema. I comandi sono documentati in `SIMULATORE.md`.
+- Le partite create con la precedente logica ad accumulo non possono essere continuate con le nuove regole. I loro dati possono rimanere; per provare il 501 va creata una nuova partita.
+- Le attività della fase restano da verificare prima di spuntare i relativi punti.
+
 ### Fase 6 — API per componenti esterni
 
 Obiettivo: esporre REST/JSON per simulatore e client player, senza login player sul server.
@@ -177,5 +186,5 @@ Obiettivo: dimostrare la separazione client/server.
 
 - Definire l'identità dei player nelle app esterne: utente preesistente, nickname temporaneo o altro identificativo.
 - Definire l'autorizzazione del simulatore: chiave dispositivo, token tecnico o altra soluzione semplice.
-- Definire la condizione precisa di fine partita nel punteggio ad accumulo.
+- Definire eventuali varianti del formato iniziale (per esempio 301 invece di 501), dopo aver completato il flusso standard 501.
 - Riportare qui le tabelle effettive dopo la ricognizione della Fase 1.
