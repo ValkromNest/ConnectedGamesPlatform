@@ -6,6 +6,7 @@ namespace app\models;
 
 use yii\db\ActiveQuery;
 use yii\db\ActiveRecord;
+use app\enums\MatchStatus;
 
 /**
  * Partita persistita; "match" è una parola riservata in PHP 8.
@@ -50,5 +51,37 @@ class GameMatch extends ActiveRecord
     public function getThrows(): ActiveQuery
     {
         return $this->hasMany(DartThrow::class, ['match_id' => 'id']);
+    }
+
+    /** Transizioni amministrative ammesse, con aggiornamento atomico dello stato. */
+    public function transitionTo(MatchStatus $next): bool
+    {
+        $current = MatchStatus::tryFrom((int) $this->status);
+        $allowed = match ($current) {
+            MatchStatus::CREATED => [MatchStatus::OPEN],
+            MatchStatus::OPEN => [MatchStatus::RUNNING, MatchStatus::FINISHED],
+            MatchStatus::RUNNING => [MatchStatus::FINISHED],
+            default => [],
+        };
+
+        if (!in_array($next, $allowed, true)) {
+            return false;
+        }
+
+        $now = date('Y-m-d H:i:s');
+        $attributes = ['status' => $next->value];
+        if ($next === MatchStatus::RUNNING) {
+            $attributes['started_at'] = $now;
+        } elseif ($next === MatchStatus::FINISHED) {
+            $attributes['ended_at'] = $now;
+        }
+
+        $changed = static::updateAll($attributes, ['id' => $this->id, 'status' => $current->value]);
+        if ($changed !== 1) {
+            return false;
+        }
+
+        $this->refresh();
+        return true;
     }
 }

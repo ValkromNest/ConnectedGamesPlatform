@@ -22,7 +22,7 @@ Questo file è il riferimento tra le sessioni di sviluppo. Aggiornare la sezione
 - [x] Errore sintattico iniziale in `models/LoginForm.php` corretto.
 - [x] Struttura effettiva del database verificata.
 - [x] Modelli ActiveRecord creati.
-- [ ] Gestione amministrativa delle partite implementata.
+- [x] Gestione amministrativa delle partite implementata.
 - [ ] API per simulatore e client esterni implementate.
 
 ## Ordine di lavoro
@@ -96,23 +96,24 @@ Obiettivo: proteggere l'area web di amministrazione.
 
 Obiettivo: rendere possibile il ciclo di vita di una partita dal pannello admin.
 
-- [ ] Dashboard con giochi supportati e partite recenti/attive.
+- [x] Dashboard con giochi supportati e partite recenti/attive.
 - [x] Vista Freccette con elenco delle partite.
 - [x] Creazione partita: nome, gioco, massimo giocatori (massimo 2) e configurazione essenziale.
-- [ ] Transizioni controllate: `CREATED → OPEN → RUNNING → FINISHED`.
-- [ ] Vista dettaglio: partecipanti, punteggi, tiri e stato.
-- [ ] Azioni amministratore: aprire, avviare e terminare una partita.
+- [x] Transizioni controllate: `CREATED → OPEN → RUNNING → FINISHED`.
+- [x] Vista dettaglio: partecipanti, punteggi, tiri e stato.
+- [x] Azioni amministratore: aprire, avviare e terminare una partita.
 
 **Esito atteso:** l'amministratore gestisce una partita completa dall'interfaccia web.
 
-#### Avanzamento iniziale (2026-10-03)
+#### Avanzamento e completamento (2026-10-08)
 
-- La dashboard resta volutamente senza widget o riepiloghi.
+- La dashboard mostra i giochi abilitati, le partite attive (create, aperte o in corso) e le otto partite più recenti.
 - La sidebar contiene la sezione espandibile **Partite freccette**, con collegamenti a elenco e creazione.
 - L'elenco mostra soltanto le partite del gioco con codice `darts`, tramite GridView Yii2 con filtri, ordinamento, paginazione e aggiornamento Pjax. La creazione richiede nome e numero massimo di giocatori (1 o 2), associa automaticamente Freccette e salva nello stato `CREATED`.
 - `DartsMatch` estende `GameMatch` e raccoglie il comportamento specifico delle Freccette, incluso l'elenco filtrabile; le configurazioni e le regole del gioco saranno aggiunte allo stesso modello o a servizi dedicati nelle fasi successive.
-- Il nome di ogni partita nell'elenco apre la relativa pagina di modifica, nella quale sono aggiornabili solo nome e massimo giocatori; gioco e stato sono preservati dal controller.
-- Le azioni di dettaglio, le transizioni di stato e la configurazione ulteriore restano fuori da questa sottofase.
+- La colonna **Dettagli** e il nome della partita aprono una pagina dedicata; la modifica di nome e massimo giocatori resta separata e preserva gioco e stato.
+- Il dettaglio mostra stato e date del ciclo di vita, partecipanti con punteggio e tiri registrati. Le sezioni sono utilizzabili anche quando non ci sono ancora partecipanti o tiri.
+- L'amministratore può aprire, avviare e terminare la partita mediante richieste POST protette. Da `OPEN` può avviarla oppure terminarla manualmente; da `RUNNING` può terminarla. Il server controlla le transizioni e registra `started_at`/`ended_at`. L'avvio non richiede ancora partecipanti: l'iscrizione sarà introdotta con le API della Fase 6.
 
 ### Fase 5 — logica di gioco freccette
 
