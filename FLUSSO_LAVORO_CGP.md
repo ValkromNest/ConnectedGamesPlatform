@@ -91,6 +91,7 @@ Obiettivo: proteggere l'area web di amministrazione.
 - Dashboard e logout sono protetti dalla sessione Yii2; la dashboard verifica anche esplicitamente il ruolo amministrativo. Il logout invalida la sessione e riporta al form di accesso.
 - I player sono respinti dal login web. Il database non contiene ancora un amministratore: prima dell'uso effettivo occorre creare un utente con password hash valida e ruolo `admin`.
 - Per creare il primo amministratore in modo locale e interattivo: `php yii admin/create <username>`. Il comando non accetta password come argomento, richiede password e conferma nascoste, rifiuta duplicati e richiede conferma prima del salvataggio.
+- Per creare un player in modo locale e interattivo: `php yii player/create <username>`. Il comando applica gli stessi controlli e salva il ruolo `player`; il player non può autenticarsi nell'interfaccia web amministrativa.
 
 ### Fase 4 — gestione web delle partite
 
