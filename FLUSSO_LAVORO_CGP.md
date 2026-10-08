@@ -6,7 +6,7 @@ Questo file è il riferimento tra le sessioni di sviluppo. Aggiornare la sezione
 
 - Il server centrale è questo progetto Yii2.
 - Il gioco iniziale è **Freccette**.
-- Regole iniziali: punteggio ad accumulo, al massimo 2 giocatori, turni alternati, settore `1–20` oppure bull, moltiplicatore `1–3`.
+- Regole iniziali Freccette: formato `501` a punteggio decrescente, massimo 2 giocatori, visite alternate fino a 3 freccette, mancato, settori `1–20` o bull, moltiplicatore `1–3`, chiusura esatta con un doppio e bust.
 - Il database contiene già le tabelle necessarie: non creare lo schema da zero. Prima di procedere, ispezionare struttura, chiavi e nomi reali delle tabelle.
 - Mancano i modelli Yii2 corrispondenti alle tabelle esistenti.
 - Gli amministratori usano l'interfaccia web Yii2 e sono gli unici ad autenticarsi sul server.
@@ -22,7 +22,8 @@ Questo file è il riferimento tra le sessioni di sviluppo. Aggiornare la sezione
 - [x] Errore sintattico iniziale in `models/LoginForm.php` corretto.
 - [x] Struttura effettiva del database verificata.
 - [x] Modelli ActiveRecord creati.
-- [ ] Gestione amministrativa delle partite implementata.
+- [x] Gestione amministrativa delle partite implementata.
+- [x] Logica di gioco Freccette implementata.
 - [ ] API per simulatore e client esterni implementate.
 
 ## Ordine di lavoro
@@ -91,41 +92,52 @@ Obiettivo: proteggere l'area web di amministrazione.
 - Dashboard e logout sono protetti dalla sessione Yii2; la dashboard verifica anche esplicitamente il ruolo amministrativo. Il logout invalida la sessione e riporta al form di accesso.
 - I player sono respinti dal login web. Il database non contiene ancora un amministratore: prima dell'uso effettivo occorre creare un utente con password hash valida e ruolo `admin`.
 - Per creare il primo amministratore in modo locale e interattivo: `php yii admin/create <username>`. Il comando non accetta password come argomento, richiede password e conferma nascoste, rifiuta duplicati e richiede conferma prima del salvataggio.
+- Per creare un player in modo locale e interattivo: `php yii player/create <username>`. Il comando applica gli stessi controlli e salva il ruolo `player`; il player non può autenticarsi nell'interfaccia web amministrativa.
 
 ### Fase 4 — gestione web delle partite
 
 Obiettivo: rendere possibile il ciclo di vita di una partita dal pannello admin.
 
-- [ ] Dashboard con giochi supportati e partite recenti/attive.
+- [x] Dashboard con giochi supportati e partite recenti/attive.
 - [x] Vista Freccette con elenco delle partite.
 - [x] Creazione partita: nome, gioco, massimo giocatori (massimo 2) e configurazione essenziale.
-- [ ] Transizioni controllate: `CREATED → OPEN → RUNNING → FINISHED`.
-- [ ] Vista dettaglio: partecipanti, punteggi, tiri e stato.
-- [ ] Azioni amministratore: aprire, avviare e terminare una partita.
+- [x] Transizioni controllate: `CREATED → OPEN → RUNNING → FINISHED`.
+- [x] Vista dettaglio: partecipanti, punteggi, tiri e stato.
+- [x] Azioni amministratore: aprire, avviare e terminare una partita.
 
 **Esito atteso:** l'amministratore gestisce una partita completa dall'interfaccia web.
 
-#### Avanzamento iniziale (2026-10-03)
+#### Avanzamento e completamento (2026-10-08)
 
-- La dashboard resta volutamente senza widget o riepiloghi.
+- La dashboard mostra i giochi abilitati, le partite attive (create, aperte o in corso) e le otto partite più recenti.
 - La sidebar contiene la sezione espandibile **Partite freccette**, con collegamenti a elenco e creazione.
 - L'elenco mostra soltanto le partite del gioco con codice `darts`, tramite GridView Yii2 con filtri, ordinamento, paginazione e aggiornamento Pjax. La creazione richiede nome e numero massimo di giocatori (1 o 2), associa automaticamente Freccette e salva nello stato `CREATED`.
 - `DartsMatch` estende `GameMatch` e raccoglie il comportamento specifico delle Freccette, incluso l'elenco filtrabile; le configurazioni e le regole del gioco saranno aggiunte allo stesso modello o a servizi dedicati nelle fasi successive.
-- Il nome di ogni partita nell'elenco apre la relativa pagina di modifica, nella quale sono aggiornabili solo nome e massimo giocatori; gioco e stato sono preservati dal controller.
-- Le azioni di dettaglio, le transizioni di stato e la configurazione ulteriore restano fuori da questa sottofase.
+- La colonna **Dettagli** e il nome della partita aprono una pagina dedicata; la modifica di nome e massimo giocatori resta separata e preserva gioco e stato.
+- Il dettaglio mostra stato e date del ciclo di vita, partecipanti con punteggio e tiri registrati. Le sezioni sono utilizzabili anche quando non ci sono ancora partecipanti o tiri.
+- L'amministratore può aprire, avviare e terminare la partita mediante richieste POST protette. Da `OPEN` può avviarla oppure terminarla manualmente; da `RUNNING` può terminarla. Il server controlla le transizioni e registra `started_at`/`ended_at`. L'avvio non richiede ancora partecipanti: l'iscrizione sarà introdotta con le API della Fase 6.
 
 ### Fase 5 — logica di gioco freccette
 
 Obiettivo: centralizzare e validare le regole nel server.
 
-- [ ] Creare un servizio applicativo per la partita e un servizio per il calcolo del tiro.
-- [ ] Validare settore, bull e moltiplicatore.
-- [ ] Accettare tiri solo per partite `RUNNING` e per il giocatore di turno.
-- [ ] Salvare ogni tiro e aggiornare il punteggio del partecipante nella stessa operazione logica.
-- [ ] Passare il turno al giocatore successivo.
-- [ ] Stabilire e implementare la condizione di termine secondo le regole concordate.
+- [x] Creare un servizio applicativo per la partita e un servizio per il calcolo del tiro.
+- [x] Validare settore, bull e moltiplicatore.
+- [x] Accettare tiri solo per partite `RUNNING` e per il giocatore di turno.
+- [x] Salvare ogni tiro e aggiornare il punteggio del partecipante nella stessa operazione logica.
+- [x] Passare il turno al giocatore successivo.
+- [x] Stabilire e implementare la condizione di termine secondo le regole concordate.
 
 **Esito atteso:** nessun client calcola o modifica direttamente il punteggio.
+
+#### Implementazione e verifica (2026-10-08)
+
+- Il formato adottato è `501`: ogni player parte da 501 e sottrae i punti dei tiri; vince chi arriva esattamente a zero con un doppio. Il bull esterno vale 25, quello interno è rappresentato da settore 25 × 2 (50). Non esiste il triplo bull; una freccetta mancata è settore 0 e vale zero.
+- Una visita comprende al massimo tre freccette consecutive. Se il player supera il punteggio rimanente, lascia 1, oppure arriva a zero senza un doppio, la visita è un bust: il punteggio torna a quello di inizio visita e il turno passa all'avversario.
+- `DartsThrowCalculator` valida settore e moltiplicatore; `DartsGameService` gestisce partecipanti e turni, registra ogni freccetta, aggiorna i punti rimanenti e chiude automaticamente la partita su un checkout valido nella stessa transazione.
+- I turni sono ricostruiti dalla sequenza dei tiri esistenti e dall'ordine `turn_order`; non è necessaria una modifica dello schema. I comandi sono documentati in `SIMULATORE.md`.
+- Le partite create con la precedente logica ad accumulo non possono essere continuate con le nuove regole. I loro dati possono rimanere; per provare il 501 va creata una nuova partita.
+- Verifica eseguita sul database di sviluppo in transazioni poi annullate: checkout 501, bust e ripristino punti, avanzamento dopo tre freccette mancate e passaggio turno. Verificati inoltre sintassi PHP dei file modificati e calcolo dei punti, bull e mancato.
 
 ### Fase 6 — API per componenti esterni
 
@@ -175,5 +187,5 @@ Obiettivo: dimostrare la separazione client/server.
 
 - Definire l'identità dei player nelle app esterne: utente preesistente, nickname temporaneo o altro identificativo.
 - Definire l'autorizzazione del simulatore: chiave dispositivo, token tecnico o altra soluzione semplice.
-- Definire la condizione precisa di fine partita nel punteggio ad accumulo.
+- Definire eventuali varianti del formato iniziale (per esempio 301 invece di 501), dopo aver completato il flusso standard 501.
 - Riportare qui le tabelle effettive dopo la ricognizione della Fase 1.

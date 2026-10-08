@@ -10,9 +10,19 @@ use app\models\DartsMatch;
 use app\models\Game;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
+use yii\filters\VerbFilter;
 
 final class DartsMatchController extends AdminController
 {
+    public function behaviors(): array
+    {
+        return array_merge(parent::behaviors(), [
+            'verbs' => ['class' => VerbFilter::class, 'actions' => [
+                'open' => ['POST'], 'start' => ['POST'], 'finish' => ['POST'],
+            ]],
+        ]);
+    }
+
     public function actionIndex(): string
     {
         $searchModel = new DartsMatch();
@@ -64,6 +74,42 @@ final class DartsMatchController extends AdminController
         }
 
         return $this->render('update', compact('model'));
+    }
+
+    public function actionView(int $id): string
+    {
+        $model = $this->findDartsMatch($id);
+        $model->populateRelation('matchPlayers', $model->getMatchPlayers()->with('user')->orderBy(['turn_order' => SORT_ASC, 'id' => SORT_ASC])->all());
+        $model->populateRelation('throws', $model->getThrows()->with('user')->orderBy(['created_at' => SORT_ASC, 'id' => SORT_ASC])->all());
+
+        return $this->render('view', compact('model'));
+    }
+
+    public function actionOpen(int $id): Response
+    {
+        return $this->transition($id, MatchStatus::OPEN, 'Partita aperta.');
+    }
+
+    public function actionStart(int $id): Response
+    {
+        return $this->transition($id, MatchStatus::RUNNING, 'Partita avviata.');
+    }
+
+    public function actionFinish(int $id): Response
+    {
+        return $this->transition($id, MatchStatus::FINISHED, 'Partita terminata.');
+    }
+
+    private function transition(int $id, MatchStatus $status, string $successMessage): Response
+    {
+        $model = $this->findDartsMatch($id);
+        if ($model->transitionTo($status)) {
+            Yii::$app->session->setFlash('success', $successMessage);
+        } else {
+            Yii::$app->session->setFlash('error', 'Transizione non consentita: aggiorna la pagina e verifica lo stato della partita.');
+        }
+
+        return $this->redirect(['view', 'id' => $id]);
     }
 
     private function findDartsGame(): Game
