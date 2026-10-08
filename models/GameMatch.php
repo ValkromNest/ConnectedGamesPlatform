@@ -15,6 +15,9 @@ use yii\db\ActiveRecord;
  * @property string $name
  * @property int $status
  * @property int $max_players
+ * @property string|null $created_at
+ * @property string|null $started_at
+ * @property string|null $ended_at
  */
 class GameMatch extends ActiveRecord
 {
@@ -26,7 +29,7 @@ class GameMatch extends ActiveRecord
     public function rules(): array
     {
         return [
-            [['game_id', 'name'], 'required'],
+            [['game_id', 'name'], 'required', 'on' => self::SCENARIO_DEFAULT],
             [['game_id', 'status', 'max_players'], 'integer'],
             [['game_id'], 'exist', 'skipOnError' => true, 'targetClass' => Game::class, 'targetAttribute' => ['game_id' => 'id']],
             [['name'], 'string', 'max' => 150],

@@ -59,6 +59,40 @@ main > .container-fluid {
     background-color: color-mix(in srgb, var(--app-theme-accent, var(--bs-primary)) 16%, transparent);
 }
 
+.app-sidebar-submenu > summary {
+    cursor: pointer;
+    list-style: none;
+}
+
+.app-sidebar-submenu > summary::-webkit-details-marker {
+    display: none;
+}
+
+.app-sidebar-submenu > summary::after {
+    content: '\203A';
+    float: right;
+    font-size: 1.25rem;
+    line-height: 1;
+    transition: transform .15s ease-in-out;
+}
+
+.app-sidebar-submenu[open] > summary::after {
+    transform: rotate(90deg);
+}
+
+.app-sidebar-submenu-links {
+    margin-top: .25rem;
+    margin-left: .75rem;
+    padding-left: .75rem;
+    border-left: 1px solid var(--bs-border-color);
+}
+
+.app-sidebar-submenu-links .app-sidebar-link {
+    padding-top: .375rem;
+    padding-bottom: .375rem;
+    font-size: .925rem;
+}
+
 .btn-primary {
     --bs-btn-bg: var(--app-theme-accent, var(--bs-primary));
     --bs-btn-border-color: var(--app-theme-accent, var(--bs-primary));

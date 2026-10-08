@@ -7,6 +7,9 @@ declare(strict_types=1);
 use yii\helpers\Html;
 
 $isDashboard = Yii::$app->controller?->route === 'dashboard/index';
+$isDartsMatchSection = in_array(Yii::$app->controller?->id, ['darts-match'], true);
+$isDartsMatchIndex = Yii::$app->controller?->route === 'darts-match/index';
+$isDartsMatchCreate = Yii::$app->controller?->route === 'darts-match/create';
 
 ?>
 <aside id="menu-left" class="app-sidebar" aria-label="Navigazione principale">
@@ -19,6 +22,29 @@ $isDashboard = Yii::$app->controller?->route === 'dashboard/index';
                     ['/dashboard/index'],
                     ['class' => 'nav-link app-sidebar-link' . ($isDashboard ? ' active' : '')],
                 ) ?>
+            </li>
+            <li class="nav-item app-sidebar-submenu-item">
+                <details class="app-sidebar-submenu"<?= $isDartsMatchSection ? ' open' : '' ?>>
+                    <summary class="nav-link app-sidebar-link<?= $isDartsMatchSection ? ' active' : '' ?>">
+                        Partite freccette
+                    </summary>
+                    <ul class="nav flex-column app-sidebar-submenu-links">
+                        <li class="nav-item">
+                            <?= Html::a(
+                                'Elenco partite',
+                                ['/darts-match/index'],
+                                ['class' => 'nav-link app-sidebar-link' . ($isDartsMatchIndex ? ' active' : '')],
+                            ) ?>
+                        </li>
+                        <li class="nav-item">
+                            <?= Html::a(
+                                'Nuova partita',
+                                ['/darts-match/create'],
+                                ['class' => 'nav-link app-sidebar-link' . ($isDartsMatchCreate ? ' active' : '')],
+                            ) ?>
+                        </li>
+                    </ul>
+                </details>
             </li>
         </ul>
     </nav>
