@@ -24,6 +24,7 @@ Questo file è il riferimento tra le sessioni di sviluppo. Aggiornare la sezione
 - [x] Modelli ActiveRecord creati.
 - [x] Gestione amministrativa delle partite implementata.
 - [x] Logica di gioco Freccette implementata.
+- [x] Gestore dispositivi base implementato.
 - [ ] API per simulatore e client esterni implementate.
 
 ## Ordine di lavoro
@@ -174,6 +175,13 @@ Obiettivo: dimostrare la separazione client/server.
 - Aggiunta mediante migration Yii la tabella `sys_autoconfigurazione`: `id` autoincrementale, `nome` univoco (`varchar(255)`), `valore` e `descrizione` (`LONGTEXT`, nullable).
 - Il modello `Autoconfigurazione` espone gli accessor tipizzati stringa, booleano, intero, float e array. Se una chiave manca, viene creata con il valore predefinito ricevuto; se esiste, il valore nel database ha sempre precedenza.
 - La pagina amministrativa `gestore_temi` salva in autoconfigurazione il colore principale diurno (`tema.colore_diurno`) e notturno (`tema.colore_notturno`), applicandolo a sidebar e pulsanti primari.
+
+## Gestore dispositivi (2026-10-08)
+
+- Aggiunta con migration Yii `m261008_130000_create_tbl_device_table` la tabella `tbl_device`, collegata a `tbl_game` tramite FK `game_id` e indice. La migration è stata applicata al database configurato.
+- Il gestore permette di creare e aggiornare dispositivi con nome univoco, tipologia collegata al gioco e stato abilitato/disabilitato. La modifica non cambia il token.
+- Il token viene generato dal server al momento della creazione; nel DB è conservato solo il suo hash SHA-256 e in gestionale viene mostrato una sola volta.
+- L'assegnazione del dispositivo alla partita e le API per il dispositivo restano da implementare nelle attività successive.
 
 ## Promemoria per ogni sessione
 
