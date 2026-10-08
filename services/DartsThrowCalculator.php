@@ -13,12 +13,20 @@ final class DartsThrowCalculator
 
     public function calculate(int $sector, int $multiplier): int
     {
-        if (!in_array($sector, [...range(1, 20), 25], true)) {
-            throw new DomainException('Il settore deve essere compreso tra 1 e 20 oppure essere il bull (25).');
-        }
-
         if ($multiplier < 1 || $multiplier > 3) {
             throw new DomainException('Il moltiplicatore deve essere compreso tra 1 e 3.');
+        }
+
+        if ($sector === 0) {
+            if ($multiplier !== 1) {
+                throw new DomainException('Una freccetta mancata vale zero e non ha moltiplicatore.');
+            }
+
+            return 0;
+        }
+
+        if (!in_array($sector, [...range(1, 20), 25], true)) {
+            throw new DomainException('Il settore deve essere 0 (mancato), compreso tra 1 e 20 oppure il bull (25).');
         }
 
         if ($sector === 25 && $multiplier === 3) {

@@ -53,7 +53,7 @@ $postButton = static fn (string $label, string $route, string $class): string =>
         <h2 class="h5 mb-3">Tiri</h2>
         <?php if ($model->throws === []): ?><p class="text-body-secondary mb-0">Nessun tiro registrato.</p><?php else: ?>
             <div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr><th>Data</th><th>Giocatore</th><th>Settore</th><th>Moltiplicatore</th><th>Punti</th></tr></thead><tbody>
-            <?php foreach ($model->throws as $throw): /** @var DartThrow $throw */ ?><tr><td><?= Yii::$app->formatter->asDatetime($throw->created_at) ?></td><td><?= Html::encode($throw->user?->username ?? 'Utente non disponibile') ?></td><td><?= Html::encode($throw->sector) ?></td><td><?= Html::encode($throw->multiplier) ?></td><td><?= Html::encode($throw->score) ?></td></tr><?php endforeach; ?>
+            <?php foreach ($model->throws as $throw): /** @var DartThrow $throw */ ?><tr><td><?= Yii::$app->formatter->asDatetime($throw->created_at) ?></td><td><?= Html::encode($throw->user?->username ?? 'Utente non disponibile') ?></td><td><?= $throw->sector === 0 ? 'Mancato' : Html::encode($throw->sector) ?></td><td><?= $throw->sector === 0 ? '—' : Html::encode($throw->multiplier) ?></td><td><?= Html::encode($throw->score) ?></td></tr><?php endforeach; ?>
             </tbody></table></div>
         <?php endif; ?>
     </div></div>

@@ -33,13 +33,13 @@ Questa guida descrive come usare i comandi console per associare player già cre
    php yii simulatore/play <idPartita>
    ```
 
-   A ogni freccetta il comando mostra il player che deve tirare. Ogni player tira fino a tre freccette consecutive; poi il turno passa all'altro player. Inserisci un settore da `1` a `20` oppure `25` per il bull, poi un moltiplicatore. Per il bull usa `1` (25 punti) o `2` (50 punti); il triplo bull non esiste. Inserisci `q` al prompt del settore per terminare il simulatore e lasciare la partita in corso.
+   A ogni freccetta il comando mostra il player che deve tirare. Ogni player tira fino a tre freccette consecutive; poi il turno passa all'altro player. Inserisci `0` se la freccetta manca il bersaglio: vale zero, consuma una freccetta e non richiede moltiplicatore. Altrimenti inserisci un settore da `1` a `20`, oppure `25` per il bull, e poi il moltiplicatore. Per il bull usa `1` (25 punti) o `2` (50 punti); il triplo bull non esiste. Inserisci `q` al prompt del settore per terminare il simulatore e lasciare la partita in corso.
 
 5. Per terminare la partita, usa **Termina partita** nel gestionale.
 
 ## Regole applicate
 
-- Ogni player parte da 501; il punteggio dei tiri viene sottratto dai punti rimanenti.
+- Ogni player parte da 501; il punteggio dei tiri viene sottratto dai punti rimanenti. Una freccetta mancata (settore `0`) vale zero ma conta tra le tre della visita.
 - Per vincere bisogna arrivare esattamente a zero con un doppio (`moltiplicatore = 2`); il bull interno vale come doppio 25.
 - Si fa bust se il tiro supera il punteggio rimanente, lascia 1, o arriva a zero senza un doppio. Il punteggio torna a quello di inizio visita e il turno passa.
 - Le visite alternano i partecipanti secondo `turn_order`, fino a tre freccette consecutive; il turno corrente è ricostruito dai tiri registrati.

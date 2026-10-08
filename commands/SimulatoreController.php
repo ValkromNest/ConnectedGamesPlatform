@@ -52,7 +52,7 @@ final class SimulatoreController extends Controller
 
             $user = User::findOne($player->user_id);
             $username = $user?->username ?? ('utente #' . $player->user_id);
-            $sectorInput = trim($this->prompt("Turno di {$username} — settore (1-20, 25; q per uscire): "));
+            $sectorInput = trim($this->prompt("Turno di {$username} — settore (0=mancato, 1-20, 25; q per uscire): "));
             if (strtolower($sectorInput) === 'q') {
                 return ExitCode::OK;
             }
@@ -61,17 +61,23 @@ final class SimulatoreController extends Controller
                 continue;
             }
 
-            $multiplierInput = trim($this->prompt('Moltiplicatore (1-3): '));
-            if (!preg_match('/\A\d+\z/', $multiplierInput)) {
-                $this->stderr("Inserisci un moltiplicatore numerico valido.\n");
-                continue;
+            if ((int) $sectorInput === 0) {
+                $multiplierInput = '1';
+            } else {
+                $multiplierInput = trim($this->prompt('Moltiplicatore (1-3): '));
+                if (!preg_match('/\A\d+\z/', $multiplierInput)) {
+                    $this->stderr("Inserisci un moltiplicatore numerico valido.\n");
+                    continue;
+                }
             }
 
             try {
                 $previousRemaining = (int) $player->score;
                 $throw = $service->recordThrow($matchId, (int) $player->user_id, (int) $sectorInput, (int) $multiplierInput);
                 $player->refresh();
-                if ((int) $player->score >= $previousRemaining) {
+                if ((int) $throw->score === 0) {
+                    $this->stdout(sprintf("Freccetta mancata: 0 punti. Punti rimanenti di %s: %d.\n", $username, $player->score));
+                } elseif ((int) $player->score >= $previousRemaining) {
                     $this->stdout(sprintf("Bust: visita annullata. Punti rimanenti di %s: %d.\n", $username, $player->score));
                 } else {
                     $this->stdout(sprintf("Tiro registrato: %d punti. Punti rimanenti di %s: %d.\n", $throw->score, $username, $player->score));

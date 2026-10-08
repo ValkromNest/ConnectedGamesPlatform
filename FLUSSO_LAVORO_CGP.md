@@ -6,7 +6,7 @@ Questo file è il riferimento tra le sessioni di sviluppo. Aggiornare la sezione
 
 - Il server centrale è questo progetto Yii2.
 - Il gioco iniziale è **Freccette**.
-- Regole iniziali Freccette: formato `501` a punteggio decrescente, massimo 2 giocatori, visite alternate fino a 3 freccette, settori `1–20` o bull, moltiplicatore `1–3`, chiusura esatta con un doppio e bust.
+- Regole iniziali Freccette: formato `501` a punteggio decrescente, massimo 2 giocatori, visite alternate fino a 3 freccette, mancato, settori `1–20` o bull, moltiplicatore `1–3`, chiusura esatta con un doppio e bust.
 - Il database contiene già le tabelle necessarie: non creare lo schema da zero. Prima di procedere, ispezionare struttura, chiavi e nomi reali delle tabelle.
 - Mancano i modelli Yii2 corrispondenti alle tabelle esistenti.
 - Gli amministratori usano l'interfaccia web Yii2 e sono gli unici ad autenticarsi sul server.
@@ -23,6 +23,7 @@ Questo file è il riferimento tra le sessioni di sviluppo. Aggiornare la sezione
 - [x] Struttura effettiva del database verificata.
 - [x] Modelli ActiveRecord creati.
 - [x] Gestione amministrativa delle partite implementata.
+- [x] Logica di gioco Freccette implementata.
 - [ ] API per simulatore e client esterni implementate.
 
 ## Ordine di lavoro
@@ -120,23 +121,23 @@ Obiettivo: rendere possibile il ciclo di vita di una partita dal pannello admin.
 
 Obiettivo: centralizzare e validare le regole nel server.
 
-- [ ] Creare un servizio applicativo per la partita e un servizio per il calcolo del tiro.
-- [ ] Validare settore, bull e moltiplicatore.
-- [ ] Accettare tiri solo per partite `RUNNING` e per il giocatore di turno.
-- [ ] Salvare ogni tiro e aggiornare il punteggio del partecipante nella stessa operazione logica.
-- [ ] Passare il turno al giocatore successivo.
-- [ ] Stabilire e implementare la condizione di termine secondo le regole concordate.
+- [x] Creare un servizio applicativo per la partita e un servizio per il calcolo del tiro.
+- [x] Validare settore, bull e moltiplicatore.
+- [x] Accettare tiri solo per partite `RUNNING` e per il giocatore di turno.
+- [x] Salvare ogni tiro e aggiornare il punteggio del partecipante nella stessa operazione logica.
+- [x] Passare il turno al giocatore successivo.
+- [x] Stabilire e implementare la condizione di termine secondo le regole concordate.
 
 **Esito atteso:** nessun client calcola o modifica direttamente il punteggio.
 
-#### Implementazione iniziale (2026-10-08)
+#### Implementazione e verifica (2026-10-08)
 
-- Il formato adottato è `501`: ogni player parte da 501 e sottrae i punti dei tiri; vince chi arriva esattamente a zero con un doppio. Il bull esterno vale 25, quello interno è rappresentato da settore 25 × 2 (50). Non esiste il triplo bull.
+- Il formato adottato è `501`: ogni player parte da 501 e sottrae i punti dei tiri; vince chi arriva esattamente a zero con un doppio. Il bull esterno vale 25, quello interno è rappresentato da settore 25 × 2 (50). Non esiste il triplo bull; una freccetta mancata è settore 0 e vale zero.
 - Una visita comprende al massimo tre freccette consecutive. Se il player supera il punteggio rimanente, lascia 1, oppure arriva a zero senza un doppio, la visita è un bust: il punteggio torna a quello di inizio visita e il turno passa all'avversario.
 - `DartsThrowCalculator` valida settore e moltiplicatore; `DartsGameService` gestisce partecipanti e turni, registra ogni freccetta, aggiorna i punti rimanenti e chiude automaticamente la partita su un checkout valido nella stessa transazione.
 - I turni sono ricostruiti dalla sequenza dei tiri esistenti e dall'ordine `turn_order`; non è necessaria una modifica dello schema. I comandi sono documentati in `SIMULATORE.md`.
 - Le partite create con la precedente logica ad accumulo non possono essere continuate con le nuove regole. I loro dati possono rimanere; per provare il 501 va creata una nuova partita.
-- Le attività della fase restano da verificare prima di spuntare i relativi punti.
+- Verifica eseguita sul database di sviluppo in transazioni poi annullate: checkout 501, bust e ripristino punti, avanzamento dopo tre freccette mancate e passaggio turno. Verificati inoltre sintassi PHP dei file modificati e calcolo dei punti, bull e mancato.
 
 ### Fase 6 — API per componenti esterni
 
