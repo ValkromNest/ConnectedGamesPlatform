@@ -61,7 +61,7 @@ JS, View::POS_READY);
                 'format' => 'raw',
                 'value' => static fn (DartsMatch $model): string => Html::a(
                     Html::encode($model->name),
-                    ['view', 'id' => $model->id],
+                    ['update', 'id' => $model->id],
                     ['class' => 'btn btn-outline-primary btn-sm w-100 text-center'],
                 ),
             ],
@@ -75,6 +75,10 @@ JS, View::POS_READY);
                     MatchStatus::FINISHED->value => MatchStatus::FINISHED->label(),
                 ],
                 'value' => static fn (DartsMatch $model): string => MatchStatus::from($model->status)->label(),
+            ],
+            [
+                'label' => 'Dispositivo',
+                'value' => static fn (DartsMatch $model): string => $model->device?->name ?? '—',
             ],
             [
                 'label' => 'Dettagli',

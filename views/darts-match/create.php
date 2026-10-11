@@ -19,5 +19,5 @@ $this->params['breadcrumbs'] = [
         </p>
     </div>
 
-    <?= $this->render('_form', ['model' => $model, 'submitLabel' => 'Crea partita']) ?>
+    <?= $this->render('_form', ['model' => $model, 'devices' => $devices, 'submitLabel' => 'Crea partita']) ?>
 </section>

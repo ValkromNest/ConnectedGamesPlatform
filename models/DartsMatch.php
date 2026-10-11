@@ -38,8 +38,25 @@ class DartsMatch extends GameMatch
     {
         return [
             ...parent::rules(),
+            [['device_id'], 'required'],
+            [['device_id'], 'filter', 'filter' => static fn ($value) => $value === '' ? null : $value],
+            [['device_id'], 'integer'],
+            [['device_id'], 'exist', 'skipOnError' => true, 'targetClass' => Device::class, 'targetAttribute' => ['device_id' => 'id']],
+            [['device_id'], 'validateDeviceGame'],
             [['created_at'], 'date', 'format' => 'php:Y-m-d', 'on' => self::SCENARIO_SEARCH],
         ];
+    }
+
+    public function validateDeviceGame(string $attribute): void
+    {
+        if ($this->hasErrors($attribute) || $this->$attribute === null || $this->$attribute === '') {
+            return;
+        }
+
+        $device = Device::findOne((int) $this->$attribute);
+        if ($device !== null && (int) $device->game_id !== (int) $this->game_id) {
+            $this->addError($attribute, 'Il dispositivo selezionato non è compatibile con le freccette.');
+        }
     }
 
     public static function findEnabledGame(): ?Game
@@ -60,7 +77,7 @@ class DartsMatch extends GameMatch
     public function search(array $params): ActiveDataProvider
     {
         $this->scenario = self::SCENARIO_SEARCH;
-        $query = self::findDarts()->orderBy([
+        $query = self::findDarts()->with('device')->orderBy([
             '{{%tbl_matches}}.created_at' => SORT_DESC,
             '{{%tbl_matches}}.id' => SORT_DESC,
         ]);

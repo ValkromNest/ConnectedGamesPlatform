@@ -8,6 +8,7 @@ use Yii;
 use app\enums\MatchStatus;
 use app\models\DartsMatch;
 use app\models\Game;
+use app\models\Device;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
 use yii\filters\VerbFilter;
@@ -52,7 +53,9 @@ final class DartsMatchController extends AdminController
             }
         }
 
-        return $this->render('create', compact('model'));
+        $devices = $this->availableDevices((int) $dartsGame->id);
+
+        return $this->render('create', compact('model', 'devices'));
     }
 
     public function actionUpdate(int $id): Response|string
@@ -73,7 +76,9 @@ final class DartsMatchController extends AdminController
             }
         }
 
-        return $this->render('update', compact('model'));
+        $devices = $this->availableDevices((int) $model->game_id, $model->device_id === null ? null : (int) $model->device_id);
+
+        return $this->render('update', compact('model', 'devices'));
     }
 
     public function actionView(int $id): string
@@ -134,5 +139,21 @@ final class DartsMatchController extends AdminController
         }
 
         return $model;
+    }
+
+    /** @return array<int, string> */
+    private function availableDevices(int $gameId, ?int $currentDeviceId = null): array
+    {
+        $query = Device::find()
+            ->select('name')
+            ->where(['game_id' => $gameId]);
+
+        if ($currentDeviceId === null) {
+            $query->andWhere(['is_enabled' => true]);
+        } else {
+            $query->andWhere(['or', ['is_enabled' => true], ['id' => $currentDeviceId]]);
+        }
+
+        return $query->indexBy('id')->column();
     }
 }

@@ -114,7 +114,9 @@ Obiettivo: rendere possibile il ciclo di vita di una partita dal pannello admin.
 - La sidebar contiene la sezione espandibile **Partite freccette**, con collegamenti a elenco e creazione.
 - L'elenco mostra soltanto le partite del gioco con codice `darts`, tramite GridView Yii2 con filtri, ordinamento, paginazione e aggiornamento Pjax. La creazione richiede nome e numero massimo di giocatori (1 o 2), associa automaticamente Freccette e salva nello stato `CREATED`.
 - `DartsMatch` estende `GameMatch` e raccoglie il comportamento specifico delle Freccette, incluso l'elenco filtrabile; le configurazioni e le regole del gioco saranno aggiunte allo stesso modello o a servizi dedicati nelle fasi successive.
-- La colonna **Dettagli** e il nome della partita aprono una pagina dedicata; la modifica di nome e massimo giocatori resta separata e preserva gioco e stato.
+- Il nome della partita nella griglia apre direttamente la modifica; la colonna **Dettagli** apre la pagina dedicata. La modifica preserva gioco e stato.
+- Ogni partita di Freccette richiede un dispositivo abilitato di tipologia Freccette. `DartsMatch` valida l'esistenza e la compatibilità del dispositivo; il form consente di selezionarlo sia in creazione sia in modifica.
+- La griglia mostra il dispositivo tra stato e dettagli, caricando la relazione in anticipo; la pagina di dettaglio lo mostra sotto il massimo numero di giocatori.
 - Il dettaglio mostra stato e date del ciclo di vita, partecipanti con punteggio e tiri registrati. Le sezioni sono utilizzabili anche quando non ci sono ancora partecipanti o tiri.
 - L'amministratore può aprire, avviare e terminare la partita mediante richieste POST protette. Da `OPEN` può avviarla oppure terminarla manualmente; da `RUNNING` può terminarla. Il server controlla le transizioni e registra `started_at`/`ended_at`. L'avvio non richiede ancora partecipanti: l'iscrizione sarà introdotta con le API della Fase 6.
 
@@ -181,7 +183,9 @@ Obiettivo: dimostrare la separazione client/server.
 - Aggiunta con migration Yii `m261008_130000_create_tbl_device_table` la tabella `tbl_device`, collegata a `tbl_game` tramite FK `game_id` e indice. La migration è stata applicata al database configurato.
 - Il gestore permette di creare e aggiornare dispositivi con nome univoco, tipologia collegata al gioco e stato abilitato/disabilitato. La modifica non cambia il token.
 - Il token viene generato dal server al momento della creazione; nel DB è conservato solo il suo hash SHA-256 e in gestionale viene mostrato una sola volta.
-- L'assegnazione del dispositivo alla partita e le API per il dispositivo restano da implementare nelle attività successive.
+- L'assegnazione alle partite di Freccette è implementata: è obbligatoria nell'interfaccia e validata nel modello rispetto al gioco associato.
+- Per aggiornare un database esistente, aggiungere `device_id` a `tbl_matches`, valorizzare le partite già presenti con l'ID di un dispositivo Freccette valido e poi rendere la colonna `NOT NULL`. Il vincolo FK raccomandato usa `ON DELETE RESTRICT`; l'SQL dettagliato è stato fornito in chat e non applicato automaticamente.
+- Prossimo lavoro relativo ai dispositivi: usare l'associazione partita-dispositivo nella fase API per autenticare/autorizzare le richieste del simulatore; le API non sono ancora implementate.
 
 ## Promemoria per ogni sessione
 
