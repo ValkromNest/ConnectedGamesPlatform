@@ -402,18 +402,18 @@ int readInt(const std::string& prompt) {
     }
 }
 
-void recordThrow(WinHttpClient& http, const std::string& token) {
+std::string recordThrow(WinHttpClient& http, const std::string& token) {
     Json state = http.get("api/darts-api/state", token);
     const std::string status = state.get("match").get("status").string();
     if (status != "RUNNING") {
         std::cout << "La partita non è in corso (stato: " << (status.empty() ? "nessuna partita" : status) << ").\n";
-        return;
+        return summarize(state);
     }
     const Json& turn = state.get("turn");
     const Json& player = turn.get("player");
     if (player.isNull()) {
         std::cout << "Il server non ha determinato il player di turno.\n";
-        return;
+        return summarize(state);
     }
     std::cout << "Tiro per " << player.get("username").string() << " — "
               << player.get("remainingScore").string("0") << " punti rimanenti, "
@@ -426,18 +426,20 @@ void recordThrow(WinHttpClient& http, const std::string& token) {
     std::cout << "Tiro registrato: " << result.get("sector").string() << " × "
               << result.get("multiplier").string() << " = " << result.get("score").string()
               << " punti (" << result.get("result").string() << ").\n";
-    std::cout << summarize(http.get("api/darts-api/state", token)) << '\n';
+    const std::string current = summarize(http.get("api/darts-api/state", token));
+    std::cout << current << '\n';
+    return current;
 }
 
-std::string readCommand(const std::function<void()>& pollState) {
+std::string readCommand(const std::function<bool()>& pollState) {
     std::string command;
     std::cout << "> " << std::flush;
-    auto nextPoll = std::chrono::steady_clock::now();
+    auto nextPoll = std::chrono::steady_clock::now() + std::chrono::seconds(2);
     while (true) {
         if (std::chrono::steady_clock::now() >= nextPoll) {
-            pollState();
+            const bool changed = pollState();
             nextPoll = std::chrono::steady_clock::now() + std::chrono::seconds(2);
-            std::cout << "> " << command << std::flush;
+            if (changed) std::cout << "> " << command << std::flush;
         }
         if (_kbhit()) {
             const int character = _getch();
@@ -481,27 +483,31 @@ void run(const std::string& serverUrl) {
 
     std::string lastState;
     auto poll = [&]() {
+        bool changed = false;
         try {
             const std::string current = summarize(http.get("api/darts-api/state", token));
             if (current != lastState) {
                 std::cout << "\n[Stato partita] " << current << '\n';
                 lastState = current;
+                changed = true;
             }
         } catch (const std::exception& exception) {
             const std::string error = exception.what();
             if (error != lastState) {
                 std::cout << "\n[Connessione] " << error << '\n';
                 lastState = error;
+                changed = true;
             }
         }
+        return changed;
     };
+    poll();
     while (true) {
         const std::string command = readCommand(poll);
         if (command == "q" || command == "Q") break;
         if (command == "t" || command == "T") {
             try {
-                recordThrow(http, token);
-                lastState.clear();
+                lastState = recordThrow(http, token);
             } catch (const std::exception& exception) {
                 std::cout << "Errore: " << exception.what() << '\n';
             }
@@ -524,6 +530,8 @@ void run(const std::string& serverUrl) {
 
 int main(int argc, char* argv[]) {
     try {
+        SetConsoleOutputCP(CP_UTF8);
+        SetConsoleCP(CP_UTF8);
         std::cout << "Connected Games Platform - simulatore Freccette\n";
         std::string serverUrl;
         if (argc > 1) {

@@ -37,7 +37,7 @@ Senza argomento, il programma chiede l'URL base, poi mostra i dispositivi Frecce
 - `s`: mostra subito lo stato aggiornato.
 - `q`: chiude il simulatore.
 
-Il simulatore interroga periodicamente lo stato per rilevare avvio, aggiornamenti dei punteggi e termine della partita. Non calcola i punteggi e non accede al database.
+Il simulatore interroga periodicamente lo stato per rilevare avvio, aggiornamenti dei punteggi e termine della partita. Il prompt resta fermo tra un aggiornamento e l'altro; il terminale Windows è impostato su UTF-8 per visualizzare correttamente accenti e simboli. Non calcola i punteggi e non accede al database.
 
 ## API usate
 
