@@ -86,6 +86,31 @@ Risposta indicativa di un tiro accettato:
 
 La risposta indica chi deve tirare dopo l'evento: il player può restare lo stesso per le freccette rimanenti della visita, oppure cambiare dopo tre freccette, un bust o la conclusione. I valori di `result` previsti sono `scored`, `missed`, `bust` e `checkout`. Nomi e forma definitivi del JSON saranno stabiliti con l'OpenAPI dopo le decisioni elencate sotto.
 
+### Prima implementazione: API dispositivo Freccette
+
+È stato introdotto `controllers/api/DartsApiController`, dedicato ai dispositivi di gioco Freccette. Con le route Yii standard, gli endpoint sono `GET /index.php?r=api/darts-api/state` e `POST /index.php?r=api/darts-api/throw`.
+
+- Entrambi richiedono `Authorization: Bearer <token>` di un dispositivo abilitato, registrato per il gioco `darts` e assegnato alla partita.
+- `state` restituisce stato, partecipanti e punteggi; durante `RUNNING` include player corrente e freccette rimanenti. Il simulatore interroga periodicamente lo stato per rilevare avvio e conclusione, incluse le conclusioni manuali e il checkout automatico. Non è un push server-to-device.
+- `throw` accetta JSON con `sector` e `multiplier`; il server determina player di turno e punteggio e risponde con l'esito e il nuovo stato. Non accetta un identificativo player dal dispositivo.
+- Una conclusione manuale espone `winner: null`; il checkout espone il player con punteggio zero.
+- Codici previsti: `400` per payload o tiro non valido, `401` per token non valido, `404` se il device non ha una partita assegnata, `409` per stato o turno non compatibile.
+
+La colonna `tbl_matches.device_id` deve essere presente e valorizzata come documentato in `FLUSSO_LAVORO_CGP.md`.
+
+### Pairing del simulatore
+
+Il simulatore inizia senza token dispositivo e usa questi endpoint di pairing aperti:
+
+| Metodo e route Yii | Scopo | Autenticazione |
+| --- | --- | --- |
+| `GET /index.php?r=api/darts-api/devices` | Elenca ID e nome dei dispositivi Freccette abilitati | Nessuna |
+| `POST /index.php?r=api/darts-api/session` | Riceve il token del dispositivo scelto nel JSON `{ "device_id": 1 }` | Nessuna |
+
+La risposta `session` contiene `device` e `access_token` (`Bearer`). Il simulatore lo tiene solo in memoria per la sessione corrente e lo usa per `state` e `throw`; ogni richiesta successiva è così vincolata al dispositivo selezionato. Il pairing non richiede credenziali: chiunque raggiunga il server può ottenere il token di qualsiasi dispositivo Freccette abilitato.
+
+La descrizione OpenAPI, gli endpoint di lettura per il client player e la protezione contro la ritrasmissione duplicata dei tiri restano da completare.
+
 ## Comunicazione e affidabilità
 
 La prima versione usa HTTP/REST con richieste e risposte JSON. Dopo ogni freccetta il dispositivo invia un evento e riceve il nuovo stato; può richiedere nuovamente lo stato dopo una riconnessione. Non sono previsti WebSocket, MQTT o altri protocolli push nella prima versione.
@@ -108,7 +133,7 @@ Gli errori devono restituire JSON leggibile e coerente; la mappatura finale verr
 1. Confermare il vincolo proposto di un solo dispositivo per partita attiva e una sola partita attiva per dispositivo.
 2. Stabilire quali partite sono visibili senza autenticazione al client player (ad esempio solo `OPEN` e `RUNNING`, oppure anche quelle concluse).
 3. Stabilire la politica per gli eventi duplicati e il formato dell'identificativo univoco del tiro.
-4. Definire se il token del dispositivo viene mostrato una sola volta, come proposto, e come avvengono revoca e rigenerazione.
+4. Definire la gestione amministrativa di revoca e rigenerazione del token dispositivo.
 5. Definire i campi pubblici del dettaglio partita, in particolare se esporre username o solo nomi visualizzati.
 
 ## Sequenza di implementazione proposta
@@ -117,4 +142,4 @@ Gli errori devono restituire JSON leggibile e coerente; la mappatura finale verr
 2. Definire eventuali migration necessarie per dispositivi, token e identificativi evento.
 3. Implementare API versionate per lettura e ricezione freccette, riusando `DartsGameService`.
 4. Scrivere `documentation/openapi.yaml` in base agli endpoint e ai payload confermati.
-5. Collegare l'app separata del dispositivo alle API; mantenere il simulatore interno console come strumento diretto dei servizi.
+5. Completare e verificare `device-simulator-cli`, client C++ API riusabile per una futura GUI Windows; mantenere il simulatore interno console come strumento diretto dei servizi.

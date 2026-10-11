@@ -18,6 +18,9 @@ Thumbs.db
 # composer vendor dir
 /vendor
 
+# Local C++ simulator build output
+/device-simulator-cli/device-simulator.exe
+
 # composer itself is not needed
 composer.phar
 
