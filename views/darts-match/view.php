@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 /** @var yii\web\View $this */
 /** @var app\models\DartsMatch $model */
+/** @var array<int, string> $availablePlayers */
 
 use app\enums\MatchStatus;
 use app\models\DartThrow;
@@ -44,9 +45,24 @@ $postButton = static fn (string $label, string $route, string $class): string =>
     <div class="card shadow-sm mb-4"><div class="card-body">
         <h2 class="h5 mb-3">Partecipanti</h2>
         <?php if ($model->matchPlayers === []): ?><p class="text-body-secondary mb-0">Nessun partecipante registrato.</p><?php else: ?>
-            <div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr><th>Ordine</th><th>Giocatore</th><th>Punti rimanenti</th></tr></thead><tbody>
-            <?php foreach ($model->matchPlayers as $player): /** @var MatchPlayer $player */ ?><tr><td><?= Html::encode($player->turn_order ?? '—') ?></td><td><?= Html::encode($player->user?->username ?? 'Utente non disponibile') ?></td><td><?= Html::encode($player->score) ?></td></tr><?php endforeach; ?>
+            <div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr><th>Ordine</th><th>Giocatore</th><th>Punti rimanenti</th><?php if ($status === MatchStatus::OPEN): ?><th></th><?php endif; ?></tr></thead><tbody>
+            <?php foreach ($model->matchPlayers as $player): /** @var MatchPlayer $player */ ?><tr><td><?= Html::encode($player->turn_order ?? '—') ?></td><td><?= Html::encode($player->user?->username ?? 'Utente non disponibile') ?></td><td><?= Html::encode($player->score) ?></td><?php if ($status === MatchStatus::OPEN): ?><td class="text-end"><?= Html::beginForm(['remove-player', 'id' => $model->id, 'userId' => $player->user_id], 'post', ['class' => 'd-inline']) ?><?= Html::submitButton('Rimuovi', ['class' => 'btn btn-outline-danger btn-sm', 'data' => ['confirm' => 'Rimuovere questo player dalla partita?']]) ?><?= Html::endForm() ?></td><?php endif; ?></tr><?php endforeach; ?>
             </tbody></table></div>
+        <?php endif; ?>
+        <?php if ($status === MatchStatus::OPEN && count($model->matchPlayers) < (int) $model->max_players && $availablePlayers !== []): ?>
+            <button type="button" class="btn btn-primary btn-sm mt-3" data-bs-toggle="modal" data-bs-target="#add-player-modal">Aggiungi player</button>
+            <div class="modal fade" id="add-player-modal" tabindex="-1" aria-labelledby="add-player-modal-label" aria-hidden="true">
+                <div class="modal-dialog"><div class="modal-content">
+                    <?= Html::beginForm(['add-player', 'id' => $model->id], 'post') ?>
+                    <div class="modal-header"><h2 class="modal-title fs-5" id="add-player-modal-label">Aggiungi player</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button></div>
+                    <div class="modal-body">
+                        <?= Html::label('Player', 'add-player-user-id', ['class' => 'form-label']) ?>
+                        <?= Html::dropDownList('user_id', null, $availablePlayers, ['id' => 'add-player-user-id', 'class' => 'form-select', 'prompt' => 'Seleziona un player', 'required' => true]) ?>
+                    </div>
+                    <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annulla</button><?= Html::submitButton('Aggiungi', ['class' => 'btn btn-primary']) ?></div>
+                    <?= Html::endForm() ?>
+                </div></div>
+            </div>
         <?php endif; ?>
     </div></div>
 

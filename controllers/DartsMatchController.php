@@ -9,6 +9,10 @@ use app\enums\MatchStatus;
 use app\models\DartsMatch;
 use app\models\Game;
 use app\models\Device;
+use app\models\User;
+use app\models\MatchPlayer;
+use app\services\DartsGameService;
+use DomainException;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
 use yii\filters\VerbFilter;
@@ -20,6 +24,7 @@ final class DartsMatchController extends AdminController
         return array_merge(parent::behaviors(), [
             'verbs' => ['class' => VerbFilter::class, 'actions' => [
                 'open' => ['POST'], 'start' => ['POST'], 'finish' => ['POST'],
+                'add-player' => ['POST'], 'remove-player' => ['POST'],
             ]],
         ]);
     }
@@ -86,8 +91,61 @@ final class DartsMatchController extends AdminController
         $model = $this->findDartsMatch($id);
         $model->populateRelation('matchPlayers', $model->getMatchPlayers()->with('user')->orderBy(['turn_order' => SORT_ASC, 'id' => SORT_ASC])->all());
         $model->populateRelation('throws', $model->getThrows()->with('user')->orderBy(['created_at' => SORT_ASC, 'id' => SORT_ASC])->all());
+        $assignedUserIds = array_map(static fn (MatchPlayer $player): int => (int) $player->user_id, $model->matchPlayers);
+        $availablePlayers = User::find()
+            ->select('username')
+            ->where(['role' => 'player'])
+            ->andFilterWhere(['not in', 'id', $assignedUserIds])
+            ->orderBy(['username' => SORT_ASC])
+            ->indexBy('id')
+            ->column();
 
-        return $this->render('view', compact('model'));
+        return $this->render('view', compact('model', 'availablePlayers'));
+    }
+
+    public function actionAddPlayer(int $id): Response
+    {
+        $model = $this->findDartsMatch($id);
+        try {
+            $userId = (int) $this->request->post('user_id');
+            $user = User::find()->where(['id' => $userId, 'role' => 'player'])->one();
+            if ($user === null) {
+                throw new DomainException('Seleziona un player valido.');
+            }
+            (new DartsGameService())->addPlayer($id, $user->username);
+            Yii::$app->session->setFlash('success', 'Player aggiunto alla partita.');
+        } catch (DomainException $exception) {
+            Yii::$app->session->setFlash('error', $exception->getMessage());
+        }
+
+        return $this->redirect(['view', 'id' => $id]);
+    }
+
+    public function actionRemovePlayer(int $id, int $userId): Response
+    {
+        $model = $this->findDartsMatch($id);
+        if ($model->status !== MatchStatus::OPEN->value) {
+            Yii::$app->session->setFlash('error', 'È possibile rimuovere player solo da una partita aperta.');
+            return $this->redirect(['view', 'id' => $id]);
+        }
+
+        $participant = MatchPlayer::findOne(['match_id' => $id, 'user_id' => $userId]);
+        if ($participant === null) {
+            Yii::$app->session->setFlash('error', 'Player non trovato tra i partecipanti.');
+            return $this->redirect(['view', 'id' => $id]);
+        }
+
+        if ($participant->delete() !== false) {
+            $remaining = MatchPlayer::find()->where(['match_id' => $id])->orderBy(['turn_order' => SORT_ASC, 'id' => SORT_ASC])->all();
+            foreach ($remaining as $index => $player) {
+                $player->updateAttributes(['turn_order' => $index + 1]);
+            }
+            Yii::$app->session->setFlash('success', 'Player rimosso dalla partita.');
+        } else {
+            Yii::$app->session->setFlash('error', 'Impossibile rimuovere il player.');
+        }
+
+        return $this->redirect(['view', 'id' => $id]);
     }
 
     public function actionOpen(int $id): Response
