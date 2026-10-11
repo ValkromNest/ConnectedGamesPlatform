@@ -16,6 +16,7 @@ use app\enums\MatchStatus;
  * @property string $name
  * @property int $status
  * @property int $max_players
+ * @property int|null $device_id
  * @property string|null $created_at
  * @property string|null $started_at
  * @property string|null $ended_at
@@ -43,6 +44,11 @@ class GameMatch extends ActiveRecord
     public function getGame(): ActiveQuery
     {
         return $this->hasOne(Game::class, ['id' => 'game_id']);
+    }
+
+    public function getDevice(): ActiveQuery
+    {
+        return $this->hasOne(Device::class, ['id' => 'device_id']);
     }
     public function getMatchPlayers(): ActiveQuery
     {

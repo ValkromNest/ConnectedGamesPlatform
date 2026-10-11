@@ -33,4 +33,9 @@ class Game extends ActiveRecord
     {
         return $this->hasMany(GameMatch::class, ['game_id' => 'id']);
     }
+
+    public function getDevices(): ActiveQuery
+    {
+        return $this->hasMany(Device::class, ['game_id' => 'id']);
+    }
 }

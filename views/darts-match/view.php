@@ -35,6 +35,7 @@ $postButton = static fn (string $label, string $route, string $class): string =>
     <?= DetailView::widget(['model' => $model, 'attributes' => [
         ['attribute' => 'status', 'label' => 'Stato', 'value' => $status->label()],
         ['attribute' => 'max_players', 'label' => 'Massimo giocatori'],
+        ['label' => 'Dispositivo', 'value' => $model->device?->name ?? '—'],
         ['attribute' => 'created_at', 'label' => 'Creata il', 'format' => ['datetime', 'php:d/m/Y H:i']],
         ['attribute' => 'started_at', 'label' => 'Avviata il', 'format' => ['datetime', 'php:d/m/Y H:i']],
         ['attribute' => 'ended_at', 'label' => 'Terminata il', 'format' => ['datetime', 'php:d/m/Y H:i']],
