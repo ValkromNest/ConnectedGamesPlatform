@@ -68,6 +68,12 @@ final class DartsGameService
     /** Restituisce il player che deve effettuare il prossimo tiro. */
     public function getCurrentPlayer(int $matchId): MatchPlayer
     {
+        return $this->getTurnState($matchId)['player'];
+    }
+
+    /** @return array{player: MatchPlayer, dartsRemaining: int} */
+    public function getTurnState(int $matchId): array
+    {
         $match = DartsMatch::findDarts()->andWhere(['{{%tbl_matches}}.id' => $matchId])->one();
         if ($match === null) {
             throw new DomainException('Partita di Freccette non trovata.');
@@ -78,7 +84,10 @@ final class DartsGameService
 
         $players = $this->playersQuery($matchId)->all();
         $state = $this->replay($players, $this->throwsQuery($matchId)->all());
-        return $players[$state['currentIndex']];
+        return [
+            'player' => $players[$state['currentIndex']],
+            'dartsRemaining' => 3 - $state['dartsInVisit'],
+        ];
     }
 
     /** Registra il tiro, aggiorna il punteggio e fa avanzare il turno atomicamente. */

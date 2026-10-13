@@ -118,7 +118,7 @@ Obiettivo: rendere possibile il ciclo di vita di una partita dal pannello admin.
 - Ogni partita di Freccette richiede un dispositivo abilitato di tipologia Freccette. `DartsMatch` valida l'esistenza e la compatibilità del dispositivo; il form consente di selezionarlo sia in creazione sia in modifica.
 - La griglia mostra il dispositivo tra stato e dettagli, caricando la relazione in anticipo; la pagina di dettaglio lo mostra sotto il massimo numero di giocatori.
 - Il dettaglio mostra stato e date del ciclo di vita, partecipanti con punteggio e tiri registrati. Le sezioni sono utilizzabili anche quando non ci sono ancora partecipanti o tiri.
-- L'amministratore può aprire, avviare e terminare la partita mediante richieste POST protette. Da `OPEN` può avviarla oppure terminarla manualmente; da `RUNNING` può terminarla. Il server controlla le transizioni e registra `started_at`/`ended_at`. L'avvio non richiede ancora partecipanti: l'iscrizione sarà introdotta con le API della Fase 6.
+- L'amministratore può aprire, avviare e terminare la partita mediante richieste POST protette. Da `OPEN` può avviarla oppure terminarla manualmente; da `RUNNING` può terminarla. Il server controlla le transizioni e registra `started_at`/`ended_at`. Dalla pagina di dettaglio l'admin può aggiungere e rimuovere player finché la partita è aperta; il pulsante di aggiunta è nascosto quando il limite è raggiunto.
 
 ### Fase 5 — logica di gioco freccette
 
@@ -159,7 +159,7 @@ Obiettivo: esporre REST/JSON per simulatore e client player, senza login player 
 
 Obiettivo: dimostrare la separazione client/server.
 
-- [ ] Creare il simulatore Java CLI: scelta partita, giocatore, settore e moltiplicatore; invio REST; stampa risposta.
+- [ ] Completare e verificare il simulatore Java CLI in `device-simulator-cli/`: selezione dispositivo, lettura dello stato e invio dei tiri via REST.
 - [ ] Creare il client Java: elenco partite, join/uscita e visualizzazione di stato/punteggi.
 - [ ] Verificare che nessuna delle due applicazioni usi credenziali o connessioni del database.
 
@@ -185,7 +185,11 @@ Obiettivo: dimostrare la separazione client/server.
 - Il token viene generato dal server al momento della creazione; nel DB è conservato solo il suo hash SHA-256 e in gestionale viene mostrato una sola volta.
 - L'assegnazione alle partite di Freccette è implementata: è obbligatoria nell'interfaccia e validata nel modello rispetto al gioco associato.
 - Per aggiornare un database esistente, aggiungere `device_id` a `tbl_matches`, valorizzare le partite già presenti con l'ID di un dispositivo Freccette valido e poi rendere la colonna `NOT NULL`. Il vincolo FK raccomandato usa `ON DELETE RESTRICT`; l'SQL dettagliato è stato fornito in chat e non applicato automaticamente.
-- Prossimo lavoro relativo ai dispositivi: usare l'associazione partita-dispositivo nella fase API per autenticare/autorizzare le richieste del simulatore; le API non sono ancora implementate.
+- È stato aggiunto `controllers/api/DartsApiController` per il dispositivo Freccette. Richiede il Bearer token del dispositivo abilitato e assegnato alla partita; espone lettura stato e registrazione tiro. Il server determina player di turno, punti, bust e checkout tramite i servizi di gioco.
+- Il bootstrap del simulatore espone senza autenticazione l'elenco dei dispositivi Freccette abilitati e il rilascio del token del dispositivo selezionato. Il simulatore conserva il Bearer token solo in memoria per la sessione.
+- Il simulatore rileva avvio e termine interrogando periodicamente lo stato; la prima versione HTTP non prevede push o WebSocket. Dettagli di route, payload e codici HTTP sono in `PIANIFICAZIONE_API.md`.
+- Creato il simulatore C++ CLI Windows in `device-simulator-cli/`. Usa WinHTTP e può essere compilato con MinGW-w64; la verifica end-to-end con il server resta da fare.
+- Restano da implementare endpoint pubblici per il client player, documentazione OpenAPI, gestione idempotente dei tiri ritrasmessi e verifiche end-to-end. Le API dipendono dalla presenza effettiva della colonna `tbl_matches.device_id`.
 
 ## Promemoria per ogni sessione
 
