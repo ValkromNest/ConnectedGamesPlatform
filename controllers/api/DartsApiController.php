@@ -8,9 +8,8 @@ use app\enums\MatchStatus;
 use app\models\Device;
 use app\models\DartsMatch;
 use app\models\MatchPlayer;
-use app\services\DartsGameService;
-use app\services\DartsThrowCalculator;
-use DomainException;
+use app\services\DartsGameServiceClient;
+use app\services\DartsGameServiceException;
 use Yii;
 use yii\filters\VerbFilter;
 use yii\web\Controller;
@@ -99,13 +98,20 @@ final class DartsApiController extends Controller
 
         $match = $this->assignedMatch($device);
         if ($match === null) {
-            return $this->error(404, 'Nessuna partita è assegnata a questo dispositivo.');
+            return $this->error(404, 'Nessuna partita assegnata a questo dispositivo.');
         }
 
-        return $this->matchState($match);
+        try {
+            return $this->matchState($match);
+        } catch (DartsGameServiceException $exception) {
+            return $this->error($exception->statusCode, $exception->getMessage());
+        } catch (\Throwable $exception) {
+            Yii::error($exception, __METHOD__);
+            return $this->error(503, 'Darts game service unavailable.');
+        }
     }
 
-    /** Registra un tiro; identità e punteggio del player sono determinati dal server. */
+    /** Registra un tiro; identity e punteggio del player sono determinati dal server. */
     public function actionThrow(): array
     {
         Yii::$app->response->format = Response::FORMAT_JSON;
@@ -116,7 +122,7 @@ final class DartsApiController extends Controller
 
         $match = $this->assignedMatch($device);
         if ($match === null) {
-            return $this->error(404, 'Nessuna partita è assegnata a questo dispositivo.');
+            return $this->error(404, 'Nessuna partita assegnata a questo dispositivo.');
         }
 
         $payload = json_decode(Yii::$app->request->getRawBody(), true);
@@ -129,44 +135,38 @@ final class DartsApiController extends Controller
 
         $sector = (int) $payload['sector'];
         $multiplier = (int) $payload['multiplier'];
-        $calculator = new DartsThrowCalculator();
-        try {
-            $score = $calculator->calculate($sector, $multiplier);
-        } catch (DomainException $exception) {
-            return $this->error(400, $exception->getMessage());
+        $idempotencyKey = Yii::$app->request->headers->get('Idempotency-Key', '');
+        if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i', $idempotencyKey)) {
+            $idempotencyKey = self::newUuid();
         }
-
         try {
-            $currentPlayer = (new DartsGameService())->getCurrentPlayer((int) $match->id);
-            $scoreBefore = (int) $currentPlayer->score;
-            $newScore = $scoreBefore - $score;
-            $isBust = $newScore < 0 || $newScore === 1 || ($newScore === 0 && $multiplier !== 2);
-            $throw = (new DartsGameService())->recordThrow(
+            $result = (new DartsGameServiceClient())->recordThrow(
                 (int) $match->id,
-                (int) $currentPlayer->user_id,
+                (int) $device->id,
                 $sector,
                 $multiplier,
+                strtolower($idempotencyKey),
             );
-        } catch (DomainException $exception) {
-            return $this->error(409, $exception->getMessage());
+            if (($result['result'] ?? null) === 'checkout' && $match->status === MatchStatus::RUNNING->value) {
+                $match->transitionTo(MatchStatus::FINISHED);
+            }
+            $match->refresh();
+            return [
+                'throw' => [
+                    'id' => (int) ($result['throwId'] ?? 0),
+                    'sector' => (int) $result['sector'],
+                    'multiplier' => (int) $result['multiplier'],
+                    'score' => (int) $result['score'],
+                    'result' => (string) $result['result'],
+                ],
+                'match' => $this->adaptGameState($match, $result['state']),
+            ];
+        } catch (DartsGameServiceException $exception) {
+            return $this->error($exception->statusCode, $exception->getMessage());
+        } catch (\Throwable $exception) {
+            Yii::error($exception, __METHOD__);
+            return $this->error(503, 'Il servizio di gioco unavailable.');
         }
-
-        $match->refresh();
-        $currentPlayer->refresh();
-        $result = $match->status === MatchStatus::FINISHED->value
-            ? 'checkout'
-            : ($isBust ? 'bust' : ($sector === 0 ? 'missed' : 'scored'));
-
-        return [
-            'throw' => [
-                'id' => (int) $throw->id,
-                'sector' => $sector,
-                'multiplier' => $multiplier,
-                'score' => $score,
-                'result' => $result,
-            ],
-            'match' => $this->matchState($match),
-        ];
     }
 
     private function authenticateDevice(): ?Device
@@ -224,33 +224,15 @@ final class DartsApiController extends Controller
     /** @return array<string, mixed> */
     private function matchState(DartsMatch $match): array
     {
+        if (in_array($match->status, [MatchStatus::RUNNING->value, MatchStatus::FINISHED->value], true)) {
+            return $this->adaptGameState($match, (new DartsGameServiceClient())->state((int) $match->id));
+        }
+
         $players = MatchPlayer::find()
             ->with('user')
             ->where(['match_id' => $match->id])
             ->orderBy(['turn_order' => SORT_ASC, 'id' => SORT_ASC])
             ->all();
-        $turnPlayer = null;
-        $dartsRemaining = null;
-        if ($match->status === MatchStatus::RUNNING->value) {
-            try {
-                $turnState = (new DartsGameService())->getTurnState((int) $match->id);
-                $turnPlayer = $turnState['player'];
-                $dartsRemaining = $turnState['dartsRemaining'];
-            } catch (DomainException) {
-                // Partita running senza player: il turno resta null e il client può mostrare lo stato incompleto.
-            }
-        }
-
-        $winner = null;
-        if ($match->status === MatchStatus::FINISHED->value) {
-            foreach ($players as $player) {
-                if ((int) $player->score === 0) {
-                    $winner = $this->playerData($player);
-                    break;
-                }
-            }
-        }
-
         return [
             'match' => [
                 'id' => (int) $match->id,
@@ -260,9 +242,56 @@ final class DartsApiController extends Controller
                 'endedAt' => $match->ended_at,
             ],
             'players' => array_map(fn (MatchPlayer $player): array => $this->playerData($player), $players),
+            'turn' => ['player' => null, 'dartsRemaining' => null],
+            'winner' => null,
+        ];
+    }
+
+    /** @param array<string, mixed> $gameState
+     *  @return array<string, mixed>
+     */
+    private function adaptGameState(DartsMatch $match, array $gameState): array
+    {
+        $players = array_map(static function (array $player): array {
+            $id = (string) ($player['playerId'] ?? '');
+            return [
+                'id' => ctype_digit($id) ? (int) $id : $id,
+                'username' => (string) ($player['displayName'] ?? ''),
+                'remainingScore' => (int) ($player['remainingScore'] ?? 501),
+            ];
+        }, $gameState['players'] ?? []);
+        $turn = $gameState['turn'] ?? null;
+        $turnPlayer = null;
+        if (is_array($turn) && isset($turn['playerId'])) {
+            foreach ($players as $player) {
+                if ((string) $player['id'] === (string) $turn['playerId']) {
+                    $turnPlayer = $player;
+                    break;
+                }
+            }
+        }
+        $winner = null;
+        $winnerId = $gameState['winnerPlayerId'] ?? null;
+        if ($winnerId !== null) {
+            foreach ($players as $player) {
+                if ((string) $player['id'] === (string) $winnerId) {
+                    $winner = $player;
+                    break;
+                }
+            }
+        }
+        return [
+            'match' => [
+                'id' => (int) $match->id,
+                'name' => (string) $match->name,
+                'status' => (string) ($gameState['status'] ?? MatchStatus::from((int) $match->status)->name),
+                'startedAt' => $match->started_at,
+                'endedAt' => $match->ended_at,
+            ],
+            'players' => $players,
             'turn' => [
-                'player' => $turnPlayer instanceof MatchPlayer ? $this->playerData($turnPlayer) : null,
-                'dartsRemaining' => $dartsRemaining,
+                'player' => $turnPlayer,
+                'dartsRemaining' => is_array($turn) ? ($turn['dartsRemaining'] ?? null) : null,
             ],
             'winner' => $winner,
         ];

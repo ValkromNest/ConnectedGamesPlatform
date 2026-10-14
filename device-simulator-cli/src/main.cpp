@@ -1,14 +1,18 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <winhttp.h>
+#include <bcrypt.h>
 #include <conio.h>
 
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <cstdint>
 #include <functional>
+#include <iomanip>
 #include <iostream>
 #include <map>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <thread>
@@ -289,8 +293,9 @@ public:
         return request(L"GET", route, "", token);
     }
 
-    Json post(const std::string& route, const std::string& body, const std::string& token = "") {
-        return request(L"POST", route, body, token);
+    Json post(const std::string& route, const std::string& body, const std::string& token = "",
+              const std::string& idempotencyKey = "") {
+        return request(L"POST", route, body, token, idempotencyKey);
     }
 
 private:
@@ -300,7 +305,8 @@ private:
     bool secure_ = false;
     HINTERNET session_ = nullptr;
 
-    Json request(const std::wstring& method, const std::string& route, const std::string& body, const std::string& token) {
+    Json request(const std::wstring& method, const std::string& route, const std::string& body,
+                 const std::string& token, const std::string& idempotencyKey = "") {
         HINTERNET connection = WinHttpConnect(session_, host_.c_str(), port_, 0);
         if (!connection) throw std::runtime_error("Connessione al server non riuscita.");
 
@@ -315,6 +321,7 @@ private:
         std::wstring headers = L"Accept: application/json\r\n";
         if (!body.empty()) headers += L"Content-Type: application/json; charset=utf-8\r\n";
         if (!token.empty()) headers += L"Authorization: Bearer " + widen(token) + L"\r\n";
+        if (!idempotencyKey.empty()) headers += L"Idempotency-Key: " + widen(idempotencyKey) + L"\r\n";
 
         const BOOL sent = WinHttpSendRequest(requestHandle, headers.c_str(), static_cast<DWORD>(headers.size()),
                 body.empty() ? WINHTTP_NO_REQUEST_DATA : const_cast<char*>(body.data()),
@@ -359,6 +366,26 @@ private:
         return parsed;
     }
 };
+
+std::string newUuid() {
+    std::array<unsigned char, 16> bytes{};
+    const NTSTATUS status = BCryptGenRandom(
+        nullptr,
+        bytes.data(),
+        static_cast<ULONG>(bytes.size()),
+        BCRYPT_USE_SYSTEM_PREFERRED_RNG
+    );
+    if (status < 0) throw std::runtime_error("Generazione della chiave univoca del tiro non riuscita.");
+    bytes[6] = static_cast<unsigned char>((bytes[6] & 0x0f) | 0x40);
+    bytes[8] = static_cast<unsigned char>((bytes[8] & 0x3f) | 0x80);
+    std::ostringstream value;
+    value << std::hex << std::setfill('0');
+    for (std::size_t i = 0; i < bytes.size(); ++i) {
+        if (i == 4 || i == 6 || i == 8 || i == 10) value << '-';
+        value << std::setw(2) << static_cast<unsigned int>(bytes[i]);
+    }
+    return value.str();
+}
 
 std::string jsonIntegerField(const std::string& name, int value) {
     return "\"" + name + "\":" + std::to_string(value);
@@ -421,7 +448,7 @@ std::string recordThrow(WinHttpClient& http, const std::string& token) {
     const int sector = readInt("Settore (0 mancato, 1-20, 25 bull): ");
     const int multiplier = sector == 0 ? 1 : readInt("Moltiplicatore (1-3; bull: 1 o 2): ");
     Json response = http.post("api/darts-api/throw", "{" + jsonIntegerField("sector", sector) + ","
-            + jsonIntegerField("multiplier", multiplier) + "}", token);
+            + jsonIntegerField("multiplier", multiplier) + "}", token, newUuid());
     const Json& result = response.get("throw");
     std::cout << "Tiro registrato: " << result.get("sector").string() << " × "
               << result.get("multiplier").string() << " = " << result.get("score").string()

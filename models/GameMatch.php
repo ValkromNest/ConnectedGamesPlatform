@@ -54,11 +54,6 @@ class GameMatch extends ActiveRecord
     {
         return $this->hasMany(MatchPlayer::class, ['match_id' => 'id']);
     }
-    public function getThrows(): ActiveQuery
-    {
-        return $this->hasMany(DartThrow::class, ['match_id' => 'id']);
-    }
-
     /** Transizioni amministrative ammesse, con aggiornamento atomico dello stato. */
     public function transitionTo(MatchStatus $next): bool
     {

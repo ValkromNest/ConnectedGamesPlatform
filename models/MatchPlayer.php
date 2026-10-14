@@ -42,9 +42,4 @@ class MatchPlayer extends ActiveRecord
     {
         return $this->hasOne(User::class, ['id' => 'user_id']);
     }
-    public function getThrows(): ActiveQuery
-    {
-        return $this->hasMany(DartThrow::class, ['user_id' => 'user_id'])
-            ->andWhere(['{{%tbl_throws}}.match_id' => $this->match_id]);
-    }
 }

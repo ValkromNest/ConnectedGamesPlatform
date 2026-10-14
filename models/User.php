@@ -41,11 +41,6 @@ class User extends ActiveRecord implements IdentityInterface
         return $this->hasMany(MatchPlayer::class, ['user_id' => 'id']);
     }
 
-    public function getThrows(): ActiveQuery
-    {
-        return $this->hasMany(DartThrow::class, ['user_id' => 'id']);
-    }
-
     public static function findIdentity($id): static|null
     {
         return static::findOne($id);
