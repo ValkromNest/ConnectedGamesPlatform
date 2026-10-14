@@ -17,6 +17,8 @@ Thumbs.db
 
 # composer vendor dir
 /vendor
+/services/*/vendor/
+/services/*/runtime/
 
 # Local C++ simulator build output
 /device-simulator-cli/device-simulator.exe

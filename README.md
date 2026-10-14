@@ -27,10 +27,6 @@ features to your application.
     <img src="docs/images/home-light.png" alt="Web Application Basic">
 </picture>
 
-## Docker
-
-[![Apache](https://img.shields.io/github/actions/workflow/status/yiisoft/yii2-app-basic/docker.yml?style=for-the-badge&logo=apache&label=Apache)](https://github.com/yiisoft/yii2-app-basic/actions/workflows/docker.yml)
-
 DIRECTORY STRUCTURE
 -------------------
 
@@ -95,32 +91,11 @@ You can then access the application through the following URL:
 http://localhost/basic/web/
 ~~~
 
-## Install with Docker
+## Avvio locale con XAMPP
 
-Update your vendor packages
+Il codice del progetto resta fuori dalle cartelle XAMPP. Avvia Apache e MySQL da XAMPP, poi avvia da PhpStorm l'application server dell'applicazione, raggiungibile su `http://127.0.0.1:8080`. L'app si collega al database MySQL su `localhost`.
 
-    docker-compose run --rm php composer update --prefer-dist
-    
-Run the installation triggers (creating cookie validation code)
-
-    docker-compose run --rm php composer install    
-    
-Start the container
-
-    docker-compose up -d
-    
-You can then access the application through the following URL:
-
-    http://127.0.0.1:8000
-
-Run tests inside the container
-
-    docker compose exec -T php vendor/bin/codecept build
-    docker compose exec -T php vendor/bin/codecept run
-
-**NOTES:** 
-- Minimum required Docker engine version `17.04` for development (see [Performance tuning for volume mounts](https://docs.docker.com/docker-for-mac/osxfs-caching/))
-- The default configuration uses a host-volume in your home directory `~/.composer-docker/cache` for Composer caches
+Prepara in MySQL il database `connected_games_db`, configurato in `config/db.php`. Yii2 non crea automaticamente il database.
 
 
 CONFIGURATION
@@ -128,7 +103,7 @@ CONFIGURATION
 
 ## Database
 
-Edit the file `config/db.php` with real data, for example:
+La connessione predefinita è locale per XAMPP: database `connected_games_db`, utente `root`, password vuota. Se la tua configurazione XAMPP è diversa, modifica `config/db.php`.
 
 ```php
 return [

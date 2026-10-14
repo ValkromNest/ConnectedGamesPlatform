@@ -12,6 +12,7 @@ use app\models\Device;
 use app\models\User;
 use app\models\MatchPlayer;
 use app\services\DartsGameService;
+use app\services\DartsGameServiceClient;
 use DomainException;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
@@ -155,7 +156,42 @@ final class DartsMatchController extends AdminController
 
     public function actionStart(int $id): Response
     {
-        return $this->transition($id, MatchStatus::RUNNING, 'Partita avviata.');
+        $model = $this->findDartsMatch($id);
+        if ($model->status !== MatchStatus::OPEN->value) {
+            Yii::$app->session->setFlash('error', 'È possibile avviare solo una partita aperta.');
+            return $this->redirect(['view', 'id' => $id]);
+        }
+
+        $players = MatchPlayer::find()
+            ->with('user')
+            ->where(['match_id' => $id])
+            ->orderBy(['turn_order' => SORT_ASC, 'id' => SORT_ASC])
+            ->all();
+        $contextPlayers = array_map(static fn (MatchPlayer $player): array => [
+            'playerId' => (string) $player->user_id,
+            'displayName' => (string) ($player->user?->username ?? ''),
+            'turnOrder' => (int) $player->turn_order,
+        ], $players);
+
+        try {
+            $initialized = (new DartsGameServiceClient())->initialize(
+                $id,
+                $contextPlayers,
+                self::contextIdempotencyKey($id),
+            );
+            if (($initialized['status'] ?? null) !== 'RUNNING') {
+                throw new \RuntimeException('Il servizio di gioco non ha avviato la partita.');
+            }
+            if (!$model->transitionTo(MatchStatus::RUNNING)) {
+                throw new \RuntimeException('Il servizio di gioco è pronto, ma lo stato della partita non è stato aggiornato. Riprova l’avvio.');
+            }
+            Yii::$app->session->setFlash('success', 'Partita avviata.');
+        } catch (\Throwable $exception) {
+            Yii::error($exception, __METHOD__);
+            Yii::$app->session->setFlash('error', 'Impossibile avviare il gioco: ' . $exception->getMessage());
+        }
+
+        return $this->redirect(['view', 'id' => $id]);
     }
 
     public function actionFinish(int $id): Response
@@ -197,6 +233,21 @@ final class DartsMatchController extends AdminController
         }
 
         return $model;
+    }
+
+    private static function contextIdempotencyKey(int $matchId): string
+    {
+        $hex = substr(hash('sha256', 'darts-match-context:' . $matchId), 0, 32);
+        $hex[12] = '5';
+        $hex[16] = dechex((hexdec($hex[16]) & 0x3) | 0x8);
+        return sprintf(
+            '%s-%s-%s-%s-%s',
+            substr($hex, 0, 8),
+            substr($hex, 8, 4),
+            substr($hex, 12, 4),
+            substr($hex, 16, 4),
+            substr($hex, 20, 12),
+        );
     }
 
     /** @return array<int, string> */

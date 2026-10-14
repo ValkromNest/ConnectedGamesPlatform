@@ -1,0 +1,365 @@
+﻿openapi: 3.1.0
+info:
+  title: Connected Games Platform - Service Contracts
+  version: 1.0.0
+  description: >-
+    Contratti target della prima estrazione a microservizi. Le route documentano
+    il confine previsto e non implicano che siano gia implementate nel monolite.
+servers:
+  - url: http://localhost:8001/api/v1
+    description: matches-service locale (solo sviluppo)
+tags:
+  - name: Matches
+  - name: Devices
+  - name: Darts game
+security:
+  - serviceBearer: []
+paths:
+  /matches:
+    post:
+      tags: [Matches]
+      operationId: createMatch
+      summary: Crea una partita
+      security: [{ serviceBearer: [] }]
+      parameters: [{$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CorrelationId'}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, gameCode, maxPlayers]
+              properties:
+                name: {type: string, minLength: 1, maxLength: 120}
+                gameCode: {type: string, example: darts}
+                maxPlayers: {type: integer, minimum: 1}
+                configuration: {type: object, additionalProperties: true}
+      responses:
+        '201':
+          description: Partita creata
+          content: {application/json: {schema: {$ref: '#/components/schemas/Match'}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/Unprocessable'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /matches/{matchId}/players:
+    post:
+      tags: [Matches]
+      operationId: assignPlayer
+      summary: Aggiunge un player alla partita
+      security: [{ serviceBearer: [] }]
+      parameters:
+        - {$ref: '#/components/parameters/MatchId'}
+        - {$ref: '#/components/parameters/IdempotencyKey'}
+        - {$ref: '#/components/parameters/CorrelationId'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [playerId]
+              properties: {playerId: {type: string}}
+      responses:
+        '200': {description: Player assegnato o risultato idempotente, content: {application/json: {schema: {$ref: '#/components/schemas/Match'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/Unprocessable'}
+  /matches/{matchId}/device:
+    put:
+      tags: [Matches]
+      operationId: assignDevice
+      summary: Associa un dispositivo verificato alla partita
+      security: [{ serviceBearer: [] }]
+      parameters:
+        - {$ref: '#/components/parameters/MatchId'}
+        - {$ref: '#/components/parameters/IdempotencyKey'}
+        - {$ref: '#/components/parameters/CorrelationId'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, required: [deviceId], properties: {deviceId: {type: string}}}
+      responses:
+        '200': {description: Dispositivo associato, content: {application/json: {schema: {$ref: '#/components/schemas/Match'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /matches/{matchId}/open:
+    post:
+      tags: [Matches]
+      operationId: openMatch
+      summary: Apre una partita
+      security: [{ serviceBearer: [] }]
+      parameters: [{$ref: '#/components/parameters/MatchId'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CorrelationId'}]
+      responses:
+        '200': {description: Stato aggiornato, content: {application/json: {schema: {$ref: '#/components/schemas/Match'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /matches/{matchId}/start:
+    post:
+      tags: [Matches]
+      operationId: startMatch
+      summary: Inizializza il gioco e avvia la partita
+      description: La partita diventa RUNNING solo dopo la conferma di darts-game-service.
+      security: [{ serviceBearer: [] }]
+      parameters: [{$ref: '#/components/parameters/MatchId'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CorrelationId'}]
+      responses:
+        '200': {description: Partita avviata, content: {application/json: {schema: {$ref: '#/components/schemas/Match'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+        '504': {$ref: '#/components/responses/GatewayTimeout'}
+  /matches/{matchId}/finish:
+    post:
+      tags: [Matches]
+      operationId: finishMatch
+      summary: Chiude amministrativamente una partita
+      security: [{ serviceBearer: [] }]
+      parameters: [{$ref: '#/components/parameters/MatchId'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CorrelationId'}]
+      responses:
+        '200': {description: Partita chiusa, content: {application/json: {schema: {$ref: '#/components/schemas/Match'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /devices/{deviceId}/pair:
+    post:
+      tags: [Devices]
+      operationId: pairDevice
+      summary: Emette una credenziale device durante provisioning amministrativo
+      security: [{ serviceBearer: [] }]
+      parameters: [{$ref: '#/components/parameters/DeviceId'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CorrelationId'}]
+      responses:
+        '201':
+          description: Token mostrato solo nella risposta di provisioning
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [deviceId, accessToken, tokenType]
+                properties:
+                  deviceId: {type: string}
+                  accessToken: {type: string, writeOnly: true}
+                  tokenType: {type: string, const: Bearer}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /device-session/state:
+    get:
+      tags: [Devices]
+      operationId: getDeviceMatchState
+      summary: Legge stato e contesto della partita assegnata al device
+      security: [{ deviceBearer: [] }]
+      parameters: [{$ref: '#/components/parameters/CorrelationId'}]
+      responses:
+        '200': {description: Stato corrente, content: {application/json: {schema: {$ref: '#/components/schemas/GameState'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /device-session/throws:
+    post:
+      tags: [Devices]
+      operationId: submitDeviceThrow
+      summary: Autentica il device e inoltra un tiro al servizio gioco
+      security: [{ deviceBearer: [] }]
+      parameters: [{$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CorrelationId'}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [sector, multiplier]
+              properties:
+                sector: {type: integer, enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 25]}
+                multiplier: {type: integer, enum: [1, 2, 3]}
+      responses:
+        '200': {description: Tiro registrato o risposta idempotente, content: {application/json: {schema: {$ref: '#/components/schemas/ThrowResult'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+        '504': {$ref: '#/components/responses/GatewayTimeout'}
+  /games/darts/matches/{matchId}/context:
+    servers:
+      - url: http://127.0.0.1:8003/api/v1
+    put:
+      tags: [Darts game]
+      operationId: initializeDartsMatch
+      summary: Inizializza stato e roster di una partita Freccette
+      security: [{ serviceBearer: [] }]
+      parameters: [{$ref: '#/components/parameters/MatchId'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CorrelationId'}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [contextVersion, gameCode, players, configuration]
+              properties:
+                contextVersion: {type: integer, const: 1}
+                gameCode: {type: string, const: darts}
+                players:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: object
+                    required: [playerId, displayName, turnOrder]
+                    properties:
+                      playerId: {type: string}
+                      displayName: {type: string}
+                      turnOrder: {type: integer, minimum: 1}
+                configuration:
+                  type: object
+                  required: [startingScore, checkout]
+                  properties:
+                    startingScore: {type: integer, const: 501}
+                    checkout: {type: string, const: double}
+      responses:
+        '200': {description: Contesto inizializzato, content: {application/json: {schema: {$ref: '#/components/schemas/GameState'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/Unprocessable'}
+  /games/darts/matches/{matchId}/state:
+    servers:
+      - url: http://127.0.0.1:8003/api/v1
+    get:
+      tags: [Darts game]
+      operationId: getDartsState
+      security: [{ serviceBearer: [] }, { deviceBearer: [] }]
+      parameters: [{$ref: '#/components/parameters/MatchId'}, {$ref: '#/components/parameters/CorrelationId'}]
+      responses:
+        '200': {description: Stato gioco, content: {application/json: {schema: {$ref: '#/components/schemas/GameState'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /games/darts/matches/{matchId}/throws:
+    servers:
+      - url: http://127.0.0.1:8003/api/v1
+    post:
+      tags: [Darts game]
+      operationId: registerDartsThrow
+      security: [{ serviceBearer: [] }]
+      parameters: [{$ref: '#/components/parameters/MatchId'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CorrelationId'}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [deviceId, sector, multiplier]
+              properties:
+                deviceId: {type: string}
+                sector: {type: integer, enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 25]}
+                multiplier: {type: integer, enum: [1, 2, 3]}
+      responses:
+        '200': {description: Tiro ed esito, content: {application/json: {schema: {$ref: '#/components/schemas/ThrowResult'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/Unprocessable'}
+  /matches/{matchId}/finished:
+    post:
+      tags: [Matches]
+      operationId: notifyMatchFinished
+      summary: Callback del servizio gioco per checkout completato
+      security: [{ serviceBearer: [] }]
+      parameters: [{$ref: '#/components/parameters/MatchId'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CorrelationId'}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [winnerPlayerId, finishedAt]
+              properties:
+                winnerPlayerId: {type: string}
+                finishedAt: {type: string, format: date-time}
+      responses:
+        '200': {description: Stato generale chiuso, content: {application/json: {schema: {$ref: '#/components/schemas/Match'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+components:
+  securitySchemes:
+    serviceBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: opaque
+      description: Token client-to-service distinto e limitato per audience/permessi.
+    deviceBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: opaque
+      description: Token assegnato a un singolo dispositivo e revocabile.
+  parameters:
+    MatchId: {name: matchId, in: path, required: true, schema: {type: string}}
+    DeviceId: {name: deviceId, in: path, required: true, schema: {type: string}}
+    IdempotencyKey: {name: Idempotency-Key, in: header, required: true, schema: {type: string, format: uuid}}
+    CorrelationId: {name: X-Correlation-ID, in: header, required: false, schema: {type: string, format: uuid}}
+  schemas:
+    Match:
+      type: object
+      required: [matchId, gameCode, status]
+      properties:
+        matchId: {type: string}
+        gameCode: {type: string}
+        status: {type: string, enum: [CREATED, OPEN, RUNNING, FINISHED]}
+        players: {type: array, items: {type: object, properties: {playerId: {type: string}, displayName: {type: string}}}}
+        deviceId: {type: [string, 'null']}
+        correlationId: {type: string, format: uuid}
+    GameState:
+      type: object
+      required: [matchId, status, players]
+      properties:
+        matchId: {type: string}
+        status: {type: string, enum: [READY, RUNNING, FINISHED]}
+        players:
+          type: array
+          items:
+            type: object
+            properties:
+              playerId: {type: string}
+              displayName: {type: string}
+              remainingScore: {type: integer}
+              turnOrder: {type: integer}
+        turn: {type: [object, 'null'], properties: {playerId: {type: string}, dartsRemaining: {type: integer}}}
+        winnerPlayerId: {type: [string, 'null']}
+        correlationId: {type: string, format: uuid}
+    ThrowResult:
+      type: object
+      required: [throwId, sector, multiplier, score, result, state]
+      properties:
+        throwId: {type: string}
+        sector: {type: integer}
+        multiplier: {type: integer}
+        score: {type: integer}
+        result: {type: string, enum: [scored, missed, bust, checkout]}
+        state: {$ref: '#/components/schemas/GameState'}
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message, correlationId]
+          properties:
+            code: {type: string}
+            message: {type: string}
+            correlationId: {type: string, format: uuid}
+  responses:
+    BadRequest: {description: JSON o parametro non valido, content: {application/json: {schema: {$ref: '#/components/schemas/Error'}}}}
+    Unauthorized: {description: Credenziale assente/non valida, content: {application/json: {schema: {$ref: '#/components/schemas/Error'}}}}
+    NotFound: {description: Risorsa non trovata, content: {application/json: {schema: {$ref: '#/components/schemas/Error'}}}}
+    Conflict: {description: Transizione incompatibile o chiave idempotente riutilizzata con contenuto diverso, content: {application/json: {schema: {$ref: '#/components/schemas/Error'}}}}
+    Unprocessable: {description: Regola di dominio non soddisfatta, content: {application/json: {schema: {$ref: '#/components/schemas/Error'}}}}
+    Unavailable: {description: Dipendenza temporaneamente indisponibile, content: {application/json: {schema: {$ref: '#/components/schemas/Error'}}}}
+    GatewayTimeout: {description: Dipendenza oltre il timeout, content: {application/json: {schema: {$ref: '#/components/schemas/Error'}}}}
+

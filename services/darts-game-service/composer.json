@@ -1,0 +1,26 @@
+{
+  "name": "connected-games/darts-game-service",
+  "description": "Standalone Yii2 service for 501 darts matches",
+  "type": "project",
+  "require": {
+    "php": ">=8.2",
+    "yiisoft/yii2": "~2.0.54"
+  },
+  "autoload": {
+    "psr-4": {
+      "darts\\": "src/"
+    }
+  },
+  "repositories": [
+    {
+      "type": "composer",
+      "url": "https://asset-packagist.org"
+    }
+  ],
+  "config": {
+    "allow-plugins": {
+      "yiisoft/yii2-composer": true
+    },
+    "process-timeout": 1800
+  }
+}
