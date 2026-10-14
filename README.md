@@ -76,21 +76,17 @@ php yii migrate
 La migrazione si interrompe senza modificare la tabella se trova ancora righe
 in `tbl_match_players`.
 
-### Creare o trasferire l'account admin
+### Creare gli account
 
-Se `connected_games_db.tbl_user` contiene già account, importarli nel servizio di identità dalla cartella `services/identity-service`:
-
-```powershell
-php yii identity/import-legacy-users
-```
-
-Il comando copia username, ruolo e hash password; non modifica il database originale. Per creare un nuovo admin invece:
+Gli account admin e player sono gestiti esclusivamente da Identity Service. Dalla cartella `services/identity-service` creare un account con:
 
 ```powershell
 php yii identity/create-user <username> admin
+php yii identity/create-user <username> player
 ```
 
-Il comando richiede la password due volte in modo interattivo e ne richiede almeno 12 caratteri. Account player si possono predisporre con ruolo `player`; l'accesso player ai resoconti verrà aggiunto in futuro.
+La migrazione principale converte il roster ai subject ID e rimuove la vecchia tabella `tbl_user`. Prima di applicarla, assicurarsi che gli account necessari siano già presenti in Identity Service: dopo la rimozione, gli account si creano e si amministrano solo tramite quel servizio.
+
 
 ## 3. Configurare PhpStorm
 

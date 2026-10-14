@@ -1,3 +1,5 @@
+Nota: questo documento descrive il flusso monolitico precedente alla separazione dell'identity service. Per istruzioni e architettura attuali fare riferimento a README.md e STRUTTURA_MICROSERVIZI.md.
+
 # Connected Games Platform — flusso di lavoro
 
 Questo file è il riferimento tra le sessioni di sviluppo. Aggiornare la sezione **Stato** e spuntare le attività concluse al termine di ogni sessione.

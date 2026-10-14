@@ -9,7 +9,6 @@ use identity\models\IdentityAccessToken;
 use Yii;
 use yii\console\Controller;
 use yii\console\ExitCode;
-use yii\db\Connection;
 
 final class IdentityController extends Controller
 {
@@ -98,66 +97,6 @@ final class IdentityController extends Controller
             ['identity_user_id' => $user->id, 'revoked_at' => null],
         );
         $this->stdout("Password aggiornata e sessioni revocate per '{$username}'.\n");
-        return ExitCode::OK;
-    }
-
-    public function actionImportLegacyUsers(): int
-    {
-        $source = new Connection([
-            'dsn' => getenv('IDENTITY_LEGACY_DB_DSN') ?: 'mysql:host=localhost;port=3306;dbname=connected_games_db',
-            'username' => getenv('IDENTITY_LEGACY_DB_USER') ?: 'root',
-            'password' => getenv('IDENTITY_LEGACY_DB_PASSWORD') ?: '',
-            'charset' => 'utf8mb4',
-        ]);
-        $inserted = 0;
-        $skipped = 0;
-        $transaction = Yii::$app->db->beginTransaction();
-        try {
-            $legacyUsers = $source->createCommand(
-                'SELECT [[id]], [[username]], [[password_hash]], [[role]] FROM {{%tbl_user}} ORDER BY [[id]]',
-            )->queryAll();
-            foreach ($legacyUsers as $legacyUser) {
-                $username = trim((string) $legacyUser['username']);
-                $legacyId = (int) $legacyUser['id'];
-                if ($username === '' || !in_array((string) $legacyUser['role'], ['admin', 'player'], true)) {
-                    $skipped++;
-                    continue;
-                }
-                $exists = IdentityUser::find()->where([
-                    'or',
-                    ['username' => $username],
-                    ['legacy_user_id' => $legacyId],
-                ])->exists();
-                if ($exists) {
-                    $skipped++;
-                    continue;
-                }
-                $user = new IdentityUser([
-                    'subject_id' => self::uuid(),
-                    'legacy_user_id' => $legacyId,
-                    'username' => $username,
-                    'password_hash' => (string) $legacyUser['password_hash'],
-                    'role' => (string) $legacyUser['role'],
-                    'is_enabled' => 1,
-                    'failed_login_attempts' => 0,
-                    'created_at' => gmdate('Y-m-d H:i:s'),
-                ]);
-                if (!$user->save()) {
-                    throw new \RuntimeException('Cannot import legacy account ' . $legacyId . ': ' . json_encode($user->errors));
-                }
-                $inserted++;
-            }
-            $transaction->commit();
-        } catch (\Throwable $exception) {
-            if ($transaction->isActive) {
-                $transaction->rollBack();
-            }
-            $this->stderr('Import non completato: ' . $exception->getMessage() . "\n");
-            return ExitCode::UNSPECIFIED_ERROR;
-        } finally {
-            $source->close();
-        }
-        $this->stdout("Account importati: {$inserted}; ignorati (già presenti o ruolo non supportato): {$skipped}.\n");
         return ExitCode::OK;
     }
 

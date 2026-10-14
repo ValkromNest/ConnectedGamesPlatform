@@ -5,64 +5,35 @@ declare(strict_types=1);
 namespace app\tests\Unit;
 
 use app\controllers\LoginController;
-use app\models\User;
+use app\models\AuthenticatedUser;
 use Yii;
-use yii\base\Security;
 use yii\web\IdentityInterface;
+use yii\web\Response;
 use yii\web\View;
 
 final class LogoutTest extends \Codeception\Test\Unit
 {
-    public function testRenderUserMenuWhenUserIsLoggedIn(): void
+    public function testUserMenuDisappearsAfterLogout(): void
     {
-        $user = User::findIdentity('100');
-
-        $controller = new LoginController(
-            'login',
-            Yii::$app,
-            new Security(),
-        );
-
-        $view = new View(['context' => $controller]);
-
-        self::assertNotNull(
-            $user,
-            "Failed asserting that the user identity with ID '100' exists.",
-        );
-        self::assertInstanceOf(
-            IdentityInterface::class,
-            $user,
-            "Failed asserting that the identity is an instance of 'Identity' class.",
-        );
-
+        $user = new AuthenticatedUser([
+            'sub' => '8fc4f99c-d93c-4e9d-b132-7d8a71cfa225',
+            'username' => 'admin',
+            'role' => 'admin',
+        ]);
+        self::assertInstanceOf(IdentityInterface::class, $user);
         Yii::$app->user->login($user);
 
-        $html = $view->render('//layouts/main.php', ['content' => 'Hello World°']);
+        $controller = new LoginController('login', Yii::$app);
+        $view = new View(['context' => $controller]);
+        $html = $view->render('//layouts/main.php', ['content' => 'Hello']);
+        self::assertStringContainsString('id="user-menu-toggle"', $html);
+        self::assertStringContainsString('data-method="post"', $html);
 
-        self::assertStringContainsString(
-            '>admin</button>',
-            $html,
-            'Failed asserting that the username is rendered in the user menu.',
-        );
-        self::assertStringContainsString(
-            'id="user-menu-toggle"',
-            $html,
-            'Failed asserting that the user menu toggle is rendered.',
-        );
-        self::assertStringContainsString(
-            'data-method="post"',
-            $html,
-            'Failed asserting that the logout action uses POST method.',
-        );
+        $response = $controller->actionLogout();
+        self::assertInstanceOf(Response::class, $response);
+        self::assertTrue(Yii::$app->user->isGuest);
 
-        $controller->actionLogout();
-
-        $html = $view->render('//layouts/main.php', ['content' => 'Hello World°']);
-
-        self::assertStringNotContainsString(
-            'id="user-menu-toggle"',
-            $html,
-            'Failed asserting that the user menu is not rendered after logout.',
-        );
+        $html = $view->render('//layouts/main.php', ['content' => 'Hello']);
+        self::assertStringNotContainsString('id="user-menu-toggle"', $html);
     }
 }

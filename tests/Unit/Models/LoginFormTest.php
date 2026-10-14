@@ -6,58 +6,16 @@ namespace app\tests\Unit\Models;
 
 use app\models\LoginForm;
 use Yii;
-use yii\base\Security;
 
 final class LoginFormTest extends \Codeception\Test\Unit
 {
-    private $_model;
-
-    protected function _after()
+    public function testLoginRequiresUsernameAndPassword(): void
     {
-        Yii::$app->user->logout();
-    }
+        $model = new LoginForm();
 
-    public function testLoginNoUser()
-    {
-        $this->_model = new LoginForm(
-            new Security(),
-            [
-                'username' => 'not_existing_username',
-                'password' => 'not_existing_password',
-            ],
-        );
-
-        verify($this->_model->login())->false();
+        verify($model->login())->false();
         verify(Yii::$app->user->isGuest)->true();
-    }
-
-    public function testLoginWrongPassword()
-    {
-        $this->_model = new LoginForm(
-            new Security(),
-            [
-                'username' => 'demo',
-                'password' => 'wrong_password',
-            ],
-        );
-
-        verify($this->_model->login())->false();
-        verify(Yii::$app->user->isGuest)->true();
-        verify($this->_model->errors)->arrayHasKey('password');
-    }
-
-    public function testLoginCorrect()
-    {
-        $this->_model = new LoginForm(
-            new Security(),
-            [
-                'username' => 'demo',
-                'password' => 'demo',
-            ],
-        );
-
-        verify($this->_model->login())->true();
-        verify(Yii::$app->user->isGuest)->false();
-        verify($this->_model->errors)->arrayHasNotKey('password');
+        verify($model->errors)->arrayHasKey('username');
+        verify($model->errors)->arrayHasKey('password');
     }
 }

@@ -18,17 +18,7 @@ prefisso `tbl_`.
 
 ## Account
 
-Per trasferire gli account dal database legacy `connected_games_db` senza
-cambiare username o password:
-
-```powershell
-php yii identity/import-legacy-users
-```
-
-L'import copia username, ruolo e hash password e conserva l'ID legacy per
-collegare in futuro i profili player. Non modifica il database sorgente.
-
-Per creare o reimpostare account:
+Creare, reimpostare o revocare account e sessioni esclusivamente tramite questo servizio:
 
 ```powershell
 php yii identity/create-user <username> admin
@@ -37,8 +27,7 @@ php yii identity/set-password <username>
 php yii identity/revoke-all-tokens <username>
 ```
 
-Le password sono richieste interattivamente e devono avere almeno 12 caratteri.
-Non esistono endpoint di registrazione pubblica.
+Le password sono richieste interattivamente e devono avere almeno 12 caratteri. Non esistono endpoint di registrazione pubblica.
 
 ## Avvio in PhpStorm
 
