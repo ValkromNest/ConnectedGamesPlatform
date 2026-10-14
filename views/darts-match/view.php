@@ -23,6 +23,11 @@ $players = $gameState['players'] ?? (in_array((int) $model->status, [MatchStatus
 ], $model->matchPlayers));
 $turn = $gameState['turn'] ?? null;
 $winnerId = $gameState['winnerPlayerId'] ?? null;
+$throws = $gameState['throws'] ?? [];
+$playerNames = [];
+foreach ($players as $player) {
+    $playerNames[(string) ($player['playerId'] ?? '')] = (string) ($player['displayName'] ?? '');
+}
 $this->title = 'Dettagli partita: ' . $model->name;
 $this->params['breadcrumbs'][] = ['label' => 'Partite freccette', 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
@@ -78,5 +83,41 @@ $postButton = static fn (string $label, string $route, string $class): string =>
             </div>
         <?php endif; ?>
     </div></div>
+
+    <?php if (in_array((int) $model->status, [MatchStatus::RUNNING->value, MatchStatus::FINISHED->value], true)): ?>
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h5 mb-3">Tiri effettuati</h2>
+                <?php if ($throws === []): ?>
+                    <p class="text-body-secondary mb-0">Non sono ancora stati registrati tiri.</p>
+                <?php else: ?>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead><tr><th>#</th><th>Giocatore</th><th>Settore</th><th>Moltiplicatore</th><th>Punti</th><th>Esito</th><th>Registrato il</th></tr></thead>
+                            <tbody>
+                            <?php foreach ($throws as $index => $throw): ?>
+                                <?php
+                                $sector = (int) ($throw['sector'] ?? 0);
+                                $multiplier = (int) ($throw['multiplier'] ?? 1);
+                                $resultLabels = ['scored' => 'Valido', 'missed' => 'Mancato', 'bust' => 'Bust', 'checkout' => 'Vittoria'];
+                                $result = (string) ($throw['result'] ?? '');
+                                ?>
+                                <tr>
+                                    <td><?= $index + 1 ?></td>
+                                    <td><?= Html::encode($playerNames[(string) ($throw['playerId'] ?? '')] ?? ('Player ' . ($throw['playerId'] ?? ''))) ?></td>
+                                    <td><?= $sector === 0 ? 'Mancato' : ($sector === 25 ? 'Bull' : $sector) ?></td>
+                                    <td><?= $sector === 0 ? '—' : ($multiplier === 1 ? 'Singolo' : ($multiplier === 2 ? 'Doppio' : 'Triplo')) ?></td>
+                                    <td><?= Html::encode($throw['score'] ?? 0) ?></td>
+                                    <td><?= Html::encode($resultLabels[$result] ?? $result) ?></td>
+                                    <td><?= !empty($throw['createdAt']) ? Html::encode(Yii::$app->formatter->asDatetime($throw['createdAt'], 'php:d/m/Y H:i:s')) : '—' ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+    <?php endif; ?>
 
 </section>

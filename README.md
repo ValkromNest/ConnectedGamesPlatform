@@ -1,209 +1,112 @@
-<p align="center">
-    <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="https://www.yiiframework.com/image/design/logo/yii3_full_for_dark.svg">
-        <source media="(prefers-color-scheme: light)" srcset="https://www.yiiframework.com/image/design/logo/yii3_full_for_light.svg">
-        <img src="https://www.yiiframework.com/image/design/logo/yii3_full_for_light.svg" alt="Yii Framework" height="100">
-    </picture>
-    <h1 align="center">Yii 2 Basic Project Template</h1>
-    <br>
-</p>
+# Connected Games Platform
 
-Yii 2 Basic Project Template is a skeleton [Yii 2](https://www.yiiframework.com/) application best for
-rapidly creating small projects.
+Applicazione Yii2 monolitica con servizio autonomo per le partite di freccette. Il codice resta fuori dalle cartelle XAMPP: XAMPP fornisce Apache e MySQL, mentre i server PHP dell'applicazione e del servizio vengono avviati separatamente da PhpStorm.
 
-The template contains the basic features including user login/logout and a contact page.
-It includes all commonly used configurations that would allow you to focus on adding new
-features to your application.
+## Requisiti
 
-[![Latest Stable Version](https://img.shields.io/packagist/v/yiisoft/yii2-app-basic.svg?style=for-the-badge&label=Stable&logo=packagist)](https://packagist.org/packages/yiisoft/yii2-app-basic)
-[![Total Downloads](https://img.shields.io/packagist/dt/yiisoft/yii2-app-basic.svg?style=for-the-badge&label=Downloads)](https://packagist.org/packages/yiisoft/yii2-app-basic)
-[![build](https://img.shields.io/github/actions/workflow/status/yiisoft/yii2-app-basic/build.yml?style=for-the-badge&logo=github&label=Build)](https://github.com/yiisoft/yii2-app-basic/actions?query=workflow%3Abuild)
-[![codecov](https://img.shields.io/codecov/c/github/yiisoft/yii2-app-basic.svg?style=for-the-badge&logo=codecov&logoColor=white&label=Codecov)](https://codecov.io/gh/yiisoft/yii2-app-basic)
-[![Static Analysis](https://img.shields.io/github/actions/workflow/status/yiisoft/yii2-app-basic/static.yml?style=for-the-badge&label=Static)](https://github.com/yiisoft/yii2-app-basic/actions/workflows/static.yml)
+- Windows, XAMPP con MySQL e PHP 8.2 o successivo.
+- Composer 2.
+- PhpStorm con supporto PHP e un interprete PHP configurato. Selezionare lo stesso PHP usato per i comandi Composer e verificare che abbia attiva l'estensione `pdo_mysql`.
+- Git, per clonare il repository.
 
-<picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/images/home-dark.png">
-    <source media="(prefers-color-scheme: light)" srcset="docs/images/home-light.png">
-    <img src="docs/images/home-light.png" alt="Web Application Basic">
-</picture>
+Verifica PHP e PDO MySQL dal terminale configurato per il progetto:
 
-DIRECTORY STRUCTURE
--------------------
-
-      assets/             contains assets definition
-      commands/           contains console commands (controllers)
-      config/             contains application configurations
-      controllers/        contains Web controller classes
-      mail/               contains view files for e-mails
-      models/             contains model classes
-      runtime/            contains files generated during runtime
-      tests/              contains various tests for the basic application
-      vendor/             contains dependent 3rd-party packages
-      views/              contains view files for the Web application
-      web/                contains the entry script and Web resources
-
-REQUIREMENTS
-------------
-
-The minimum requirement by this project template that your Web server supports PHP 8.2.
-
-INSTALLATION
-------------
-
-> [!IMPORTANT]
-> - The minimum required [PHP](https://www.php.net/) version of Yii is PHP `8.2`.
-
-## Install via Composer
-
-If you do not have [Composer](https://getcomposer.org/), you may install it by following the instructions
-at [getcomposer.org](https://getcomposer.org/doc/00-intro.md#installation-nix).
-
-You can then install this project template using the following command:
-
-~~~
-composer create-project --prefer-dist yiisoft/yii2-app-basic basic
-~~~
-
-Now you should be able to access the application through the following URL, assuming `basic` is the directory
-directly under the Web root.
-
-~~~
-http://localhost/basic/web/
-~~~
-
-## Install from an Archive File
-
-Extract the archive file downloaded from [yiiframework.com](https://www.yiiframework.com/download/) to
-a directory named `basic` that is directly under the Web root.
-
-Set cookie validation key in `config/web.php` file to some random secret string:
-
-```php
-'request' => [
-    // !!! insert a secret key in the following (if it is empty) - this is required by cookie validation
-    'cookieValidationKey' => '<secret random string goes here>',
-],
+```powershell
+php --version
+php -m | findstr /I "PDO pdo_mysql"
 ```
 
-You can then access the application through the following URL:
+## 1. Clonare il progetto e installare le dipendenze
 
-~~~
-http://localhost/basic/web/
-~~~
+Aprire PowerShell nella cartella in cui si vuole collocare il progetto:
 
-## Avvio locale con XAMPP
-
-Il codice del progetto resta fuori dalle cartelle XAMPP. Avvia Apache e MySQL da XAMPP, poi avvia da PhpStorm l'application server dell'applicazione, raggiungibile su `http://127.0.0.1:8080`. L'app si collega al database MySQL su `localhost`.
-
-Prepara in MySQL il database `connected_games_db`, configurato in `config/db.php`. Yii2 non crea automaticamente il database.
-
-
-CONFIGURATION
--------------
-
-## Database
-
-La connessione predefinita è locale per XAMPP: database `connected_games_db`, utente `root`, password vuota. Se la tua configurazione XAMPP è diversa, modifica `config/db.php`.
-
-```php
-return [
-    'class' => 'yii\db\Connection',
-    'dsn' => 'mysql:host=localhost;dbname=yii2basic',
-    'username' => 'root',
-    'password' => '1234',
-    'charset' => 'utf8',
-];
+```powershell
+git clone <URL-DEL-REPOSITORY> connected_games_platform
+cd connected_games_platform
+composer install
 ```
 
-**NOTES:**
-- Yii won't create the database for you, this has to be done manually before you can access it.
-- Check and edit the other files in the `config/` directory to customize your application as required.
-- Refer to the README in the `tests` directory for information specific to basic application tests.
+Installare anche le dipendenze del servizio Freccette, che ha il proprio `composer.json`:
 
-TESTING
--------
-
-Tests are located in `tests` directory. They are developed with [Codeception PHP Testing Framework](https://codeception.com/).
-By default, there are 3 test suites:
-
-- `unit`
-- `functional`
-- `acceptance`
-
-Tests can be executed by running
-
-```
-vendor/bin/codecept run --env php-builtin
+```powershell
+cd services/darts-game-service
+composer install
+cd ../..
 ```
 
-The command above will execute unit and functional tests. Unit tests are testing the system components, while functional
-tests are for testing user interaction.
+Eseguire entrambi i `composer install` usando l'interprete PHP 8.2+ con `pdo_mysql` attivo. Il secondo comando Composer va eseguito nella cartella `services/darts-game-service`.
 
+## 2. Configurare MySQL in XAMPP
 
-## Acceptance tests
+Avviare MySQL dal pannello XAMPP. L'applicazione monolitica usa per impostazione predefinita:
 
-The `acceptance` suite is configured in `tests/Acceptance.suite.yml`.
+- host `localhost`
+- database `connected_games_db`
+- utente `root`
+- password vuota
 
-### Acceptance tests (PhpBrowser)
+Questi valori sono definiti in `config/db.php`; modificarli se la nuova macchina usa credenziali diverse.
 
-By default, acceptance tests use the `PhpBrowser` module and run against the built-in PHP web server started via the
-`php-builtin` environment.
+Creare inoltre il database `connected_games_dartsgame` per il servizio. Da PowerShell, nella directory `services/darts-game-service`, applicare le migrazioni del servizio:
 
-```
-# run all tests with built-in web server
-composer tests
-
-# run acceptance tests only
-vendor/bin/codecept run Acceptance --env php-builtin
+```powershell
+php yii migrate --migrationPath=@darts/migrations
 ```
 
-### Acceptance tests (WebDriver + Selenium)
+Se MySQL non usa i valori predefiniti, impostare prima nel terminale le variabili `DARTS_GAME_DB_HOST`, `DARTS_GAME_DB_PORT`, `DARTS_GAME_DB_NAME`, `DARTS_GAME_DB_USER` e `DARTS_GAME_DB_PASSWORD` con i valori indicati nella sezione PhpStorm qui sotto, poi eseguire il comando di migrazione nella stessa sessione PowerShell.
 
-To run acceptance tests in a real browser, switch the `acceptance` suite to use the `WebDriver` module.
-`tests/Acceptance.suite.yml` contains an example WebDriver configuration (commented).
+> **Database del monolite:** il repository non contiene un dump o una procedura completa per creare da zero tutte le tabelle di `connected_games_db`. Su una nuova installazione serve importare lo schema iniziale fornito separatamente; la migrazione sopra crea solo le tabelle del servizio Freccette.
 
-1. Download and start [Selenium Server](https://www.selenium.dev/downloads/).
-2. Install the corresponding browser driver (for example. [GeckoDriver](https://github.com/mozilla/geckodriver/releases) or
-   [ChromeDriver](https://googlechromelabs.github.io/chrome-for-testing/)).
-3. Update `tests/Acceptance.suite.yml` to enable `WebDriver` and disable `PhpBrowser`.
-4. Run:
+## 3. Configurare PhpStorm
 
-```
-vendor/bin/codecept run Acceptance --env php-builtin
-```
+Configurare e avviare due server distinti. Il monolite sarà raggiungibile su `http://127.0.0.1:8080`; il servizio Freccette su `http://127.0.0.1:8003`.
 
-## Code coverage support
+### Monolite: PHP Built-in Web Server
 
-Code coverage is configured in `codeception.yml`. You can run your tests and collect coverage with the following command:
+In **Run | Edit Configurations...**, aggiungere una configurazione **PHP Built-in Web Server**:
 
-```
-#collect coverage for all tests
-vendor/bin/codecept run --coverage --coverage-html --coverage-xml --env php-builtin
+| Campo | Valore |
+|---|---|
+| Name | `Connected Games Platform` |
+| Host | `127.0.0.1` |
+| Port | `8080` |
+| Document root | `<percorso-progetto>/web` |
+| Router script | `<percorso-progetto>/web/index.php` |
+| PHP interpreter | l'interprete PHP 8.2+ con `pdo_mysql` attivo |
 
-#collect coverage only for unit tests
-vendor/bin/codecept run Unit --coverage --coverage-html --coverage-xml --env php-builtin
+In **Environment variables**, impostare i token applicativi. Generare valori propri per ogni installazione e usare gli stessi identici valori nella configurazione del servizio:
 
-#collect coverage for unit and functional tests
-vendor/bin/codecept run Functional,Unit --coverage --coverage-html --coverage-xml --env php-builtin
+```text
+DARTS_GAME_SERVICE_URL=http://127.0.0.1:8003;DARTS_GAME_MATCHES_TOKEN=<token-partite>;DARTS_GAME_DEVICE_TOKEN=<token-dispositivi>
 ```
 
-You can see code coverage output under the `tests/Support/output` directory.
+La connessione DB del monolite legge i valori da `config/db.php`, non da variabili d'ambiente.
 
-## Documentation
+### Servizio Freccette: PHP Script
 
-- [Internals](docs/internals.md)
+In **Run | Edit Configurations...**, aggiungere una configurazione **PHP Script**:
 
-## Support the project
+| Campo | Valore |
+|---|---|
+| Name | `Darts Game Service` |
+| File | `<percorso-progetto>/services/darts-game-service/yii` |
+| Working directory | `<percorso-progetto>/services/darts-game-service` |
+| PHP interpreter | lo stesso interprete PHP 8.2+ con `pdo_mysql` attivo |
+| Arguments | `serve 127.0.0.1:8003 --docroot=web --router=web/index.php` |
 
-[![Open Collective](https://img.shields.io/badge/Open%20Collective-sponsor-7eadf1?style=for-the-badge&logo=open%20collective&logoColor=7eadf1&labelColor=555555)](https://opencollective.com/yiisoft)
+In **Environment variables**, inserire i valori di MySQL e gli stessi token configurati nel monolite:
 
-## Follow updates
+```text
+DARTS_GAME_DB_HOST=localhost;DARTS_GAME_DB_PORT=3306;DARTS_GAME_DB_NAME=connected_games_dartsgame;DARTS_GAME_DB_USER=root;DARTS_GAME_DB_PASSWORD=;DARTS_GAME_MATCHES_TOKEN=<token-partite>;DARTS_GAME_DEVICE_TOKEN=<token-dispositivi>
+```
 
-[![Official website](https://img.shields.io/badge/Powered_by-Yii_Framework-green.svg?style=for-the-badge&logo=yii)](https://www.yiiframework.com/)
-[![Follow on X](https://img.shields.io/badge/-Follow%20on%20X-1DA1F2.svg?style=for-the-badge&logo=x&logoColor=white&labelColor=000000)](https://x.com/yiiframework)
-[![Telegram](https://img.shields.io/badge/telegram-join-1DA1F2?style=for-the-badge&logo=telegram)](https://t.me/yii_framework_in_english)
-[![Slack](https://img.shields.io/badge/slack-join-1DA1F2?style=for-the-badge&logo=slack)](https://yiiframework.com/go/slack)
+`DARTS_GAME_DB_PASSWORD` è vuota nell'esempio per la configurazione XAMPP predefinita. Se PhpStorm non accetta una variabile vuota, ometterla quando la password MySQL è vuota. Se necessario si può aggiungere `DARTS_GAME_COOKIE_KEY=<chiave-casuale>`.
 
-## License
+Avviare prima **Darts Game Service**, poi **Connected Games Platform**. Lasciare entrambe le configurazioni attive durante l'uso dell'applicazione.
 
-[![License](https://img.shields.io/badge/License-BSD--3--Clause-brightgreen.svg?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=555555)](LICENSE.md)
+## Note per una nuova macchina
+
+- Non salvare token o password reali nei file del repository.
+- Le cartelle `vendor` sono ignorate da Git: eseguire `composer install` nella root e nella cartella del servizio dopo ogni nuovo clone.
+- Le porte `8080` e `8003` devono essere libere.
+- MySQL deve essere avviato da XAMPP; PhpStorm esegue i due server PHP.

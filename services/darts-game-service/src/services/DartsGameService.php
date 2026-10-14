@@ -102,6 +102,14 @@ final class DartsGameService
                 'remainingScore' => (int) $player->remaining_score,
                 'turnOrder' => (int) $player->turn_order,
             ], $players),
+            'throws' => array_map(static fn (GameThrow $throw): array => [
+                'playerId' => (string) $throw->player_id,
+                'sector' => (int) $throw->sector,
+                'multiplier' => (int) $throw->multiplier,
+                'score' => (int) $throw->score,
+                'result' => (string) $throw->result,
+                'createdAt' => (string) $throw->created_at,
+            ], $throws),
             'turn' => $replay['currentPlayer'] === null ? null : [
                 'playerId' => (string) $replay['currentPlayer']->player_id,
                 'dartsRemaining' => 3 - $replay['dartsInVisit'],
