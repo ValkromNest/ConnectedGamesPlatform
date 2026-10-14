@@ -126,6 +126,31 @@ final class AuthController extends Controller
         return ['success' => true];
     }
 
+    /** Elenco minimo dei player abilitati, accessibile solo agli admin. */
+    public function actionPlayers(): array
+    {
+        $authenticated = $this->authenticatedToken();
+        if ($authenticated === null) {
+            return $this->error(401, 'unauthorized', 'A valid bearer token is required.');
+        }
+        if ($authenticated['user']->role !== 'admin') {
+            return $this->error(403, 'forbidden', 'Administrator role is required.');
+        }
+
+        $players = IdentityUser::find()
+            ->select(['subject_id', 'username', 'role'])
+            ->where(['role' => 'player', 'is_enabled' => 1])
+            ->orderBy(['username' => SORT_ASC])
+            ->asArray()
+            ->all();
+
+        return ['players' => array_map(static fn (array $player): array => [
+            'sub' => (string) $player['subject_id'],
+            'username' => (string) $player['username'],
+            'role' => (string) $player['role'],
+        ], $players)];
+    }
+
     /** @return array{token: IdentityAccessToken, user: IdentityUser}|null */
     private function authenticatedToken(): ?array
     {

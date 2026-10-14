@@ -35,6 +35,25 @@ final class IdentityServiceClient
         $this->request('POST', '/api/v1/auth/logout', [], $accessToken);
     }
 
+    /** @return list<array{sub: string, username: string, role: 'player'}> */
+    public function players(string $accessToken): array
+    {
+        $response = $this->request('GET', '/api/v1/users/players', null, $accessToken);
+        $players = $response['players'] ?? null;
+        if (!is_array($players) || !array_is_list($players)) {
+            throw new IdentityServiceException('Identity service returned an invalid player list.', 502);
+        }
+
+        foreach ($players as $player) {
+            if (!is_array($player) || !is_string($player['sub'] ?? null)
+                || !is_string($player['username'] ?? null) || ($player['role'] ?? null) !== 'player'
+            ) {
+                throw new IdentityServiceException('Identity service returned an invalid player entry.', 502);
+            }
+        }
+        return $players;
+    }
+
     /** @param array<string, mixed>|null $payload
      *  @return array<string, mixed>
      */

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace app\models;
 
-use yii\db\ActiveQuery;
 use yii\db\ActiveRecord;
 use yii\web\IdentityInterface;
 
@@ -34,11 +33,6 @@ class User extends ActiveRecord implements IdentityInterface
             [['created_at'], 'safe'],
             [['username'], 'unique'],
         ];
-    }
-
-    public function getMatchPlayers(): ActiveQuery
-    {
-        return $this->hasMany(MatchPlayer::class, ['user_id' => 'id']);
     }
 
     public static function findIdentity($id): static|null

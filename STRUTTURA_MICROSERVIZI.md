@@ -15,8 +15,12 @@ La struttura comprende tre applicazioni: `identity-service` per autenticazione e
 | Servizio | Responsabilita | Dati di proprieta |
 | --- | --- | --- |
 | **Servizio identita (`identity-service`)** | Autenticazione e ciclo di vita degli account admin/player; emissione e rinnovo delle credenziali di accesso. | Credenziali, identificativi soggetto, ruoli e sessioni/token. Non possiede profili di dominio, partite o dispositivi. |
-| **Applicazione principale (`connected_games_platform`)** | Interfaccia web Yii2; gestione partite, partecipanti, profili player e dispositivi; autorizzazione alle funzioni e ai resoconti; coordinamento del servizio di gioco. | Dati di dominio di partite, partecipanti, profili player e dispositivi. Collega gli account di identità ai profili tramite un subject ID stabile. |
+| **Applicazione principale (`connected_games_platform`)** | Interfaccia web Yii2; gestione partite, partecipanti e dispositivi; autorizzazione alle funzioni e ai resoconti; coordinamento del servizio di gioco. | Dati di dominio di partite, partecipanti e dispositivi. I partecipanti mantengono subject ID e snapshot del nome, senza una copia locale degli account. |
 | **Gioco Freccette (`darts-game-service`)** | Validazione dei tiri, regole 501, gestione dei turni, punteggi, bust e checkout; esposizione dello stato di gioco. | Tiri e stato di gioco necessario a ricostruire o consultare punteggio e turno. |
+
+Nell'implementazione attuale l'identity service è la fonte degli account
+player: il monolite li legge tramite API e salva nella partecipazione solo il
+subject ID e uno snapshot del nome. Non mantiene una copia locale degli account.
 
 L'applicazione principale non gestisce password o autenticazione: delega il login a `identity-service` e usa l'identità risultante per autorizzare le proprie funzioni. Il servizio di gioco accetta solo chiamate server-to-server con credenziali distinte. Un eventuale gateway API non e incluso nella prima fase.
 
@@ -25,9 +29,9 @@ L'applicazione principale non gestisce password o autenticazione: delega il logi
 Ogni servizio applicativo accede soltanto al proprio database. In ambiente di sviluppo i database possono risiedere sulla stessa istanza MySQL, ma devono avere schema/database distinti e credenziali con privilegi limitati. Il database dell'identity service dipende dall'implementazione scelta.
 
 - `identity-service` e l'unico componente a leggere e modificare il proprio archivio di credenziali, sessioni/token e ruoli.
-- `connected_games_platform` e l'unica applicazione a leggere e modificare i dati di dominio del monolite: partite, partecipanti, profili player e dispositivi.
+- `connected_games_platform` e l'unica applicazione a leggere e modificare i dati di dominio del monolite: partite, partecipanti e dispositivi.
 - `darts-game-service` e l'unico a leggere e modificare il database di gioco.
-- L'app principale non conserva password o sessioni di autenticazione; mantiene solo il subject ID restituito dall'identity service per collegare un account al profilo di dominio.
+- L'app principale non conserva password o sessioni di autenticazione; usa il subject ID restituito dall'identity service e conserva il nome visualizzato nella partecipazione.
 - Non si creano foreign key tra database appartenenti a servizi diversi. Si usano identificativi opachi e API/eventi.
 - Nessun servizio condivide credenziali DB con un altro servizio.
 
@@ -77,7 +81,7 @@ Avviare Apache e MySQL dal pannello XAMPP e l'application server dalla configura
 
 ## Migrazione dal monolite
 
-La migrazione si svolge in questo repository (monorepo), mantenendo l'applicazione Yii2 come app principale per interfaccia, partite, profili player e dispositivi. `identity-service` possiede autenticazione e credenziali; `darts-game-service` possiede le regole e lo stato delle Freccette. Ogni servizio autonomo ha entry point, configurazione, dipendenze, processo e archivio dati di proprieta. Non si estraggono servizi distinti per partite o dispositivi.
+La migrazione si svolge in questo repository (monorepo), mantenendo l'applicazione Yii2 come app principale per interfaccia, partite e dispositivi. `identity-service` possiede autenticazione e credenziali; `darts-game-service` possiede le regole e lo stato delle Freccette. Ogni servizio autonomo ha entry point, configurazione, dipendenze, processo e archivio dati di proprieta. Non si estraggono servizi distinti per partite o dispositivi.
 
 Le fasi sono sequenziali. Una fase si considera conclusa solo quando i suoi risultati sono verificabili e il flusso esistente continua a funzionare. Gli elementi `[ ]` sono caselle da spuntare durante il lavoro.
 
@@ -93,14 +97,14 @@ Le fasi sono sequenziali. Una fase si considera conclusa solo quando i suoi risu
 
 #### Decisioni della Fase 0
 
-- Il monolite possiede la gestione generale delle partite, dei partecipanti, dei dispositivi e dei profili player. Gli account e le credenziali admin/player appartengono all'identity service. I player non accedono nella prima versione; in futuro potranno leggere soltanto i propri resoconti.
+- Il monolite possiede la gestione generale delle partite, dei partecipanti e dei dispositivi. Gli account e le credenziali admin/player appartengono all'identity service. I player non accedono nella prima versione; in futuro potranno leggere soltanto i propri resoconti.
 - `identity-service` e autorevole per autenticazione, credenziali e ruoli degli account admin/player; l'implementazione va scelta prima dello sviluppo.
 - Il monolite mostra le viste gestionali, gestisce i dati di dominio e le autorizzazioni sulle proprie risorse, e coordina le chiamate al servizio di gioco. Non conserva password.
 - Il monolite e autorevole per esistenza, configurazione generale, stato amministrativo, partecipanti e dispositivo associato.
 - Il registro, abilitazione, pairing e credenziali dei dispositivi restano nel monolite. Il token device viene autenticato dalla sua API.
 - `darts-game-service` e autorevole per regole e configurazione specifica di Freccette, ordine/turno di gioco, tiri, punteggi, bust e checkout. Riceve dal monolite ID partita, partecipanti e contesto necessario all'inizializzazione. Non legge il database del monolite.
 - Il monolite mantiene lo stato del ciclo generale (`CREATED`, `OPEN`, `RUNNING`, `FINISHED`). Il risultato sportivo e autorevole in `darts-game-service`; il monolite aggiorna lo stato generale in base alla risposta del servizio.
-- Admin e player hanno ruoli distinti nell'identity service. I profili player e i risultati restano nel monolite, collegati all'account tramite subject ID stabile; il monolite limita ciascun player ai propri resoconti.
+- Admin e player hanno ruoli distinti nell'identity service. I risultati restano nel monolite con subject ID e snapshot del nome; il monolite limita ciascun player ai propri resoconti.
 
 #### Inventario dati e proprietari obiettivo
 
@@ -108,9 +112,9 @@ Le fasi sono sequenziali. Una fase si considera conclusa solo quando i suoi risu
 | --- | --- | --- | --- |
 | `tbl_game` (`Game`) | Catalogo giochi; `GameMatch` e `Device` lo interrogano. | Monolite | Resta nel monolite; il servizio riceve il codice del gioco nel contesto d'inizializzazione. |
 | `tbl_matches` (`GameMatch`, `DartsMatch`) | Nome, gioco, stato, capienza, date; associazione dispositivo; dashboard e pagine admin. | Monolite | Resta nel monolite. `device_id` e ID partita sono inviati come identificativi opachi al servizio di gioco. |
-| `tbl_match_players` (`MatchPlayer`) | Partecipanti e user FK, `score` e `turn_order`; usata da gestione partita e API Darts. | Monolite per roster; servizio di gioco per stato runtime e punteggi | Il monolite gestisce appartenenza e profili player; il servizio riceve roster e ordine all'avvio e mantiene il punteggio di gioco. |
+| `tbl_match_players` (`MatchPlayer`) | Partecipanti con subject ID stabile e nome snapshot, `score` e `turn_order`; usata da gestione partita e API Darts. | Monolite per roster; servizio di gioco per stato runtime e punteggi | Il monolite gestisce l'appartenenza alla partita; il servizio riceve roster e ordine all'avvio e mantiene il punteggio di gioco. |
 | `tbl_throws` (`DartThrow`) | Tiri e riferimenti FK a partita e utente; scritta dalla logica di gioco e letta da viste/API. | `darts-game-service` | `match_id` e `player_id` diventano riferimenti opachi, senza FK verso matches o identità. |
-| `tbl_user` (`User`) | Tabella mista: account admin/player, password hash, ruolo; relazione con partecipanti. | Da separare tra identity service e monolite | Credenziali e ruoli account passano all'identity service; i profili player e i collegamenti ai risultati restano nel monolite, associati tramite subject ID stabile. Il servizio di gioco riceve ID e nome visualizzato, senza accedere a questi archivi. |
+| `tbl_user` (`User`) | Tabella legacy mista: account admin/player, password hash, ruolo; non più consultata dal monolite a runtime. | Account e ruoli gestiti dall'identity service; nessuna copia runtime nel monolite | L'identity service fornisce l'elenco player agli admin. `tbl_match_players` conserva subject ID stabile e nome visualizzato alla partecipazione; il servizio di gioco riceve gli stessi dati senza accedere a questi archivi. `tbl_user` resta solo sorgente temporanea per l'import legacy e potrà essere rimossa in una fase successiva. |
 | `tbl_device` (`Device`) | Registro dispositivi, game FK, abilitazione, hash token e token cifrato; consultata da UI/API. | Monolite | Resta nel monolite. Il token non deve essere restituito dopo il provisioning autorizzato; il servizio di gioco riceve solo l'identificativo del dispositivo. |
 | `sys_autoconfigurazione` (`Autoconfigurazione`) | Impostazioni UI, attualmente tema chiaro/scuro. | Da assegnare con la console admin. | Se resta configurazione della console, appartiene al frontend/servizio che lo ospita; non è dato di dominio di gioco. Decidere durante l'estrazione della console. |
 
@@ -119,7 +123,7 @@ Le fasi sono sequenziali. Una fase si considera conclusa solo quando i suoi risu
 | Flusso attuale | Letture/scritture rilevate | Confine da applicare |
 | --- | --- | --- |
 | Creazione e modifica partita | `DartsMatchController` scrive `tbl_matches`, legge catalogo `tbl_game` e dispositivi `tbl_device`. | Gestite dal monolite; il dispositivo viene verificato nel suo database. |
-| Assegnazione/rimozione player | `DartsMatchController` consulta `tbl_user` e scrive `tbl_match_players`; la UI legge la stessa tabella. | Gestita dal monolite; all'avvio il roster viene inviato al servizio di gioco senza condividere il database. |
+| Assegnazione/rimozione player | Il monolite legge via API i player abilitati da `identity-service`; `tbl_match_players` salva subject e nome visualizzato. | Gestita dal monolite; all'avvio il roster viene inviato al servizio di gioco senza condividere il database. |
 | Apertura/avvio/termine | `GameMatch::transitionTo` aggiorna stato; il servizio di gioco gestisce il runtime della partita. | Il monolite gestisce transizioni generali; inizializzazione e stato sportivo passano via API a `darts-game-service`. |
 | Tiro e stato Freccette | `DartsApiController` autentica token leggendo `tbl_device`; `DartsGameServiceClient` inoltra le operazioni di gioco. | Autenticazione device e associazione alla partita nel monolite; regole e punteggi in `darts-game-service`, senza accesso al DB monolitico. |
 | Login e pagine amministrative | Login Yii usa `User`; `AdminController` protegge dashboard e viste gestionali. | Login delegato all'identity service; il monolite mantiene interfaccia e autorizzazioni sulle proprie risorse. |
@@ -129,7 +133,7 @@ Le fasi sono sequenziali. Una fase si considera conclusa solo quando i suoi risu
 - `tbl_matches.game_id → tbl_game.id`: relazione interna al monolite, può restare locale.
 - `tbl_matches.device_id → tbl_device.id`: relazione interna al monolite, può restare locale.
 - `tbl_match_players.match_id → tbl_matches.id`: relazione interna al monolite per il roster; il game service riceve `match_id` opaco.
-- `tbl_match_players.user_id` e `tbl_throws.user_id → tbl_user.id`: eliminare dipendenza SQL/ActiveRecord; usare un `player_id` stabile e non joinare il database d'identità.
+- `tbl_match_players.identity_subject_id` non ha FK cross-service; il nome visualizzato è uno snapshot al momento dell'assegnazione. Il servizio di gioco riceve il subject ID stabile e non interroga il database d'identità.
 - `tbl_throws.match_id → tbl_matches.id`: rimuovere la FK nel game service; validare partita/stato tramite contesto e contratto di inizializzazione.
 - `tbl_device.game_id → tbl_game.id`: relazione interna al monolite; al servizio di gioco si invia il codice del gioco nel contesto.
 
@@ -191,7 +195,7 @@ Per l'avvio locale e la configurazione del database, vedere la sezione XAMPP del
 ### Fase 4 — Introdurre il servizio di identita
 
 - [x] Creare il servizio identità dedicato con account admin/player, database separato e API interna di login, introspezione e logout.
-- [ ] Spostare credenziali e login admin all'identity service; mantenere profili player e dati applicativi nel monolite tramite subject ID stabile.
+- [x] Spostare credenziali e login all'identity service; leggere i player abilitati tramite API e usare il subject ID nelle partecipazioni.
 - [x] Integrare il login del monolite con il servizio identità e validare token e ruolo admin.
 - [ ] Distinguere credenziali utente, credenziali server-to-server e token dei dispositivi.
 - [ ] Verificare accesso negato senza credenziali valide e isolamento dei resoconti player.

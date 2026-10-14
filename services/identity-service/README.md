@@ -61,6 +61,8 @@ IDENTITY_DB_HOST=localhost;IDENTITY_DB_PORT=3306;IDENTITY_DB_NAME=connected_game
   di 8 ore e le informazioni minime del soggetto.
 - `GET /api/v1/auth/me`: valida il token e restituisce subject, username e
   ruolo. Il monolite lo usa per verificare la sessione applicativa.
+- `GET /api/v1/users/players`: restituisce gli account player abilitati; richiede
+  un bearer token admin. Il monolite usa l'elenco per assegnarli alle partite.
 - `POST /api/v1/auth/logout`: revoca il token corrente.
 
 Nel database il token viene conservato soltanto come hash SHA-256. Login e

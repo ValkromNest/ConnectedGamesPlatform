@@ -16,8 +16,8 @@ $status = MatchStatus::from($model->status);
 $players = $gameState['players'] ?? (in_array((int) $model->status, [MatchStatus::RUNNING->value, MatchStatus::FINISHED->value], true)
     ? []
     : array_map(static fn (MatchPlayer $player): array => [
-    'playerId' => (string) $player->user_id,
-    'displayName' => (string) ($player->user?->username ?? 'Utente non disponibile'),
+    'playerId' => (string) $player->identity_subject_id,
+    'displayName' => (string) $player->display_name,
     'remainingScore' => (int) $player->score,
     'turnOrder' => (int) $player->turn_order,
 ], $model->matchPlayers));
@@ -74,8 +74,8 @@ $postButton = static fn (string $label, string $route, string $class): string =>
                     <?= Html::beginForm(['add-player', 'id' => $model->id], 'post') ?>
                     <div class="modal-header"><h2 class="modal-title fs-5" id="add-player-modal-label">Aggiungi player</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button></div>
                     <div class="modal-body">
-                        <?= Html::label('Player', 'add-player-user-id', ['class' => 'form-label']) ?>
-                        <?= Html::dropDownList('user_id', null, $availablePlayers, ['id' => 'add-player-user-id', 'class' => 'form-select', 'prompt' => 'Seleziona un player', 'required' => true]) ?>
+                        <?= Html::label('Player', 'add-player-subject-id', ['class' => 'form-label']) ?>
+                        <?= Html::dropDownList('player_subject_id', null, $availablePlayers, ['id' => 'add-player-subject-id', 'class' => 'form-select', 'prompt' => 'Seleziona un player', 'required' => true]) ?>
                     </div>
                     <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annulla</button><?= Html::submitButton('Aggiungi', ['class' => 'btn btn-primary']) ?></div>
                     <?= Html::endForm() ?>

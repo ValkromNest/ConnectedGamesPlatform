@@ -64,6 +64,18 @@ cd ../..
 
 Entrambe le migrazioni creano tabelle con il prefisso `tbl_` nel rispettivo database.
 
+Dopo aver installato lo schema esistente di `connected_games_db`, applicare
+anche la migrazione principale dalla root del progetto. Sostituisce il
+riferimento numerico a `tbl_user` in `tbl_match_players` con il subject
+Identity Service e uno snapshot del nome:
+
+```powershell
+php yii migrate
+```
+
+La migrazione si interrompe senza modificare la tabella se trova ancora righe
+in `tbl_match_players`.
+
 ### Creare o trasferire l'account admin
 
 Se `connected_games_db.tbl_user` contiene già account, importarli nel servizio di identità dalla cartella `services/identity-service`:

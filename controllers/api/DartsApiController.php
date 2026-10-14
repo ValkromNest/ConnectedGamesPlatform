@@ -229,7 +229,6 @@ final class DartsApiController extends Controller
         }
 
         $players = MatchPlayer::find()
-            ->with('user')
             ->where(['match_id' => $match->id])
             ->orderBy(['turn_order' => SORT_ASC, 'id' => SORT_ASC])
             ->all();
@@ -297,12 +296,12 @@ final class DartsApiController extends Controller
         ];
     }
 
-    /** @return array{id: int, username: string, remainingScore: int} */
+    /** @return array{id: string, username: string, remainingScore: int} */
     private function playerData(MatchPlayer $player): array
     {
         return [
-            'id' => (int) $player->user_id,
-            'username' => (string) ($player->user?->username ?? ''),
+            'id' => (string) $player->identity_subject_id,
+            'username' => (string) $player->display_name,
             'remainingScore' => (int) $player->score,
         ];
     }
