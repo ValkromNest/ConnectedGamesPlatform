@@ -1,15 +1,14 @@
 # Connected Games Platform
 
-Applicazione Yii2 monolitica con servizio autonomo per le partite di freccette. Il codice resta fuori dalle cartelle XAMPP: XAMPP fornisce Apache e MySQL, mentre i server PHP dell'applicazione e del servizio vengono avviati separatamente da PhpStorm.
+Applicazione Yii2 principale per amministrare partite e dispositivi, affiancata da due servizi autonomi: autenticazione e gestione delle partite di Freccette. Il codice resta fuori dalle cartelle XAMPP: XAMPP fornisce MySQL (e Apache, se usato); PhpStorm avvia i server PHP alle porte `8080`, `8001` e `8003`.
 
 ## Requisiti
 
 - Windows, XAMPP con MySQL e PHP 8.2 o successivo.
-- Composer 2.
-- PhpStorm con supporto PHP e un interprete PHP configurato. Selezionare lo stesso PHP usato per i comandi Composer e verificare che abbia attiva l'estensione `pdo_mysql`.
-- Git, per clonare il repository.
+- Composer 2 e Git.
+- PhpStorm con interprete PHP 8.2+ configurato e con `pdo_mysql` attivo.
 
-Verifica PHP e PDO MySQL dal terminale configurato per il progetto:
+Verifica PHP ed estensione PDO MySQL:
 
 ```powershell
 php --version
@@ -18,52 +17,74 @@ php -m | findstr /I "PDO pdo_mysql"
 
 ## 1. Clonare il progetto e installare le dipendenze
 
-Aprire PowerShell nella cartella in cui si vuole collocare il progetto:
-
 ```powershell
 git clone <URL-DEL-REPOSITORY> connected_games_platform
 cd connected_games_platform
 composer install
 ```
 
-Installare anche le dipendenze del servizio Freccette, che ha il proprio `composer.json`:
+Ogni servizio ha il proprio `composer.json` e `vendor`:
 
 ```powershell
-cd services/darts-game-service
+cd services/identity-service
+composer install
+cd ../darts-game-service
 composer install
 cd ../..
 ```
 
-Eseguire entrambi i `composer install` usando l'interprete PHP 8.2+ con `pdo_mysql` attivo. Il secondo comando Composer va eseguito nella cartella `services/darts-game-service`.
+Eseguire Composer con lo stesso interprete PHP configurato in PhpStorm.
 
-## 2. Configurare MySQL in XAMPP
+## 2. Preparare MySQL in XAMPP
 
-Avviare MySQL dal pannello XAMPP. L'applicazione monolitica usa per impostazione predefinita:
+Avviare MySQL dal pannello XAMPP e creare questi database in phpMyAdmin:
 
-- host `localhost`
-- database `connected_games_db`
-- utente `root`
-- password vuota
+- `connected_games_db` per l'applicazione principale;
+- `connected_games_identity` per il servizio di autenticazione;
+- `connected_games_dartsgame` per il servizio Freccette.
 
-Questi valori sono definiti in `config/db.php`; modificarli se la nuova macchina usa credenziali diverse.
+L'applicazione principale usa `localhost`, utente `root` e password vuota. Se i valori sono diversi, modificarli in `config/db.php`.
 
-Creare inoltre il database `connected_games_dartsgame` per il servizio. Da PowerShell, nella directory `services/darts-game-service`, applicare le migrazioni del servizio:
+> Il repository non contiene un dump o una procedura completa per creare da zero tutte le tabelle di `connected_games_db`. Su una macchina nuova serve importare lo schema iniziale fornito separatamente.
+
+Applicare la migrazione del servizio identità:
 
 ```powershell
-php yii migrate --migrationPath=@darts/migrations
+cd services/identity-service
+php yii migrate
 ```
 
-Se MySQL non usa i valori predefiniti, impostare prima nel terminale le variabili `DARTS_GAME_DB_HOST`, `DARTS_GAME_DB_PORT`, `DARTS_GAME_DB_NAME`, `DARTS_GAME_DB_USER` e `DARTS_GAME_DB_PASSWORD` con i valori indicati nella sezione PhpStorm qui sotto, poi eseguire il comando di migrazione nella stessa sessione PowerShell.
+Applicare la migrazione del servizio Freccette:
 
-> **Database del monolite:** il repository non contiene un dump o una procedura completa per creare da zero tutte le tabelle di `connected_games_db`. Su una nuova installazione serve importare lo schema iniziale fornito separatamente; la migrazione sopra crea solo le tabelle del servizio Freccette.
+```powershell
+cd ../darts-game-service
+php yii migrate --migrationPath=@darts/migrations
+cd ../..
+```
+
+Entrambe le migrazioni creano tabelle con il prefisso `tbl_` nel rispettivo database.
+
+### Creare o trasferire l'account admin
+
+Se `connected_games_db.tbl_user` contiene già account, importarli nel servizio di identità dalla cartella `services/identity-service`:
+
+```powershell
+php yii identity/import-legacy-users
+```
+
+Il comando copia username, ruolo e hash password; non modifica il database originale. Per creare un nuovo admin invece:
+
+```powershell
+php yii identity/create-user <username> admin
+```
+
+Il comando richiede la password due volte in modo interattivo e ne richiede almeno 12 caratteri. Account player si possono predisporre con ruolo `player`; l'accesso player ai resoconti verrà aggiunto in futuro.
 
 ## 3. Configurare PhpStorm
 
-Configurare e avviare due server distinti. Il monolite sarà raggiungibile su `http://127.0.0.1:8080`; il servizio Freccette su `http://127.0.0.1:8003`.
+Creare tre configurazioni da **Run | Edit Configurations...**. Il login dell'app principale richiede che il servizio identità sia avviato.
 
-### Monolite: PHP Built-in Web Server
-
-In **Run | Edit Configurations...**, aggiungere una configurazione **PHP Built-in Web Server**:
+### Applicazione principale: PHP Built-in Web Server
 
 | Campo | Valore |
 |---|---|
@@ -72,41 +93,55 @@ In **Run | Edit Configurations...**, aggiungere una configurazione **PHP Built-i
 | Port | `8080` |
 | Document root | `<percorso-progetto>/web` |
 | Router script | `<percorso-progetto>/web/index.php` |
-| PHP interpreter | l'interprete PHP 8.2+ con `pdo_mysql` attivo |
+| PHP interpreter | PHP 8.2+ con `pdo_mysql` |
 
-In **Environment variables**, impostare i token applicativi. Generare valori propri per ogni installazione e usare gli stessi identici valori nella configurazione del servizio:
+In **Environment variables**:
 
 ```text
-DARTS_GAME_SERVICE_URL=http://127.0.0.1:8003;DARTS_GAME_MATCHES_TOKEN=<token-partite>;DARTS_GAME_DEVICE_TOKEN=<token-dispositivi>
+IDENTITY_SERVICE_URL=http://127.0.0.1:8001;DARTS_GAME_SERVICE_URL=http://127.0.0.1:8003;DARTS_GAME_MATCHES_TOKEN=<token-partite>;DARTS_GAME_DEVICE_TOKEN=<token-dispositivi>
 ```
 
-La connessione DB del monolite legge i valori da `config/db.php`, non da variabili d'ambiente.
+Generare token propri e usare gli stessi valori per `DARTS_GAME_MATCHES_TOKEN` e `DARTS_GAME_DEVICE_TOKEN` anche nella configurazione del servizio Freccette. Il database principale è configurato in `config/db.php`, non tramite variabili d'ambiente.
+
+### Servizio identità: PHP Script
+
+| Campo | Valore |
+|---|---|
+| Name | `Identity Service` |
+| File | `<percorso-progetto>/services/identity-service/yii` |
+| Working directory | `<percorso-progetto>/services/identity-service` |
+| PHP interpreter | PHP 8.2+ con `pdo_mysql` |
+| Arguments | `serve 127.0.0.1:8001 --docroot=web --router=web/index.php` |
+
+In **Environment variables**:
+
+```text
+IDENTITY_DB_HOST=localhost;IDENTITY_DB_PORT=3306;IDENTITY_DB_NAME=connected_games_identity;IDENTITY_DB_USER=root;IDENTITY_DB_PASSWORD=;IDENTITY_COOKIE_KEY=<segreto-casuale-lungo>
+```
+
+`IDENTITY_DB_PASSWORD` è vuota nell'esempio XAMPP; se PhpStorm non accetta un valore vuoto, omettere la variabile. Impostare per `IDENTITY_COOKIE_KEY` un valore casuale di almeno 32 caratteri, non salvarlo nel repository.
 
 ### Servizio Freccette: PHP Script
-
-In **Run | Edit Configurations...**, aggiungere una configurazione **PHP Script**:
 
 | Campo | Valore |
 |---|---|
 | Name | `Darts Game Service` |
 | File | `<percorso-progetto>/services/darts-game-service/yii` |
 | Working directory | `<percorso-progetto>/services/darts-game-service` |
-| PHP interpreter | lo stesso interprete PHP 8.2+ con `pdo_mysql` attivo |
+| PHP interpreter | PHP 8.2+ con `pdo_mysql` |
 | Arguments | `serve 127.0.0.1:8003 --docroot=web --router=web/index.php` |
 
-In **Environment variables**, inserire i valori di MySQL e gli stessi token configurati nel monolite:
+In **Environment variables**:
 
 ```text
 DARTS_GAME_DB_HOST=localhost;DARTS_GAME_DB_PORT=3306;DARTS_GAME_DB_NAME=connected_games_dartsgame;DARTS_GAME_DB_USER=root;DARTS_GAME_DB_PASSWORD=;DARTS_GAME_MATCHES_TOKEN=<token-partite>;DARTS_GAME_DEVICE_TOKEN=<token-dispositivi>
 ```
 
-`DARTS_GAME_DB_PASSWORD` è vuota nell'esempio per la configurazione XAMPP predefinita. Se PhpStorm non accetta una variabile vuota, ometterla quando la password MySQL è vuota. Se necessario si può aggiungere `DARTS_GAME_COOKIE_KEY=<chiave-casuale>`.
+Avviare MySQL in XAMPP e poi i processi PhpStorm nell'ordine: **Identity Service**, **Darts Game Service**, **Connected Games Platform**. Lasciare attive tutte e tre le configurazioni durante l'uso.
 
-Avviare prima **Darts Game Service**, poi **Connected Games Platform**. Lasciare entrambe le configurazioni attive durante l'uso dell'applicazione.
+## Note
 
-## Note per una nuova macchina
-
-- Non salvare token o password reali nei file del repository.
-- Le cartelle `vendor` sono ignorate da Git: eseguire `composer install` nella root e nella cartella del servizio dopo ogni nuovo clone.
-- Le porte `8080` e `8003` devono essere libere.
-- MySQL deve essere avviato da XAMPP; PhpStorm esegue i due server PHP.
+- Il servizio identità conserva password hashate e salva nei database soltanto hash dei token di accesso. Il token ha durata massima di 8 ore; il logout lo revoca.
+- Non salvare password, token o chiavi reali nei file del repository.
+- Le cartelle `vendor` sono ignorate da Git: dopo un nuovo clone eseguire `composer install` nella root e in entrambe le cartelle `services`.
+- MySQL deve essere avviato da XAMPP; le porte host `8080`, `8001` e `8003` devono essere libere.

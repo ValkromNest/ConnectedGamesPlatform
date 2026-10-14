@@ -1,0 +1,26 @@
+{
+  "name": "connected-games/identity-service",
+  "description": "Identity and authentication service for Connected Games Platform",
+  "type": "project",
+  "require": {
+    "php": ">=8.2",
+    "yiisoft/yii2": "~2.0.54"
+  },
+  "autoload": {
+    "psr-4": {
+      "identity\\": "src/"
+    }
+  },
+  "repositories": [
+    {
+      "type": "composer",
+      "url": "https://asset-packagist.org"
+    }
+  ],
+  "config": {
+    "allow-plugins": {
+      "yiisoft/yii2-composer": true
+    },
+    "process-timeout": 1800
+  }
+}
