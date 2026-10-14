@@ -265,6 +265,22 @@ paths:
         '404': {$ref: '#/components/responses/NotFound'}
         '409': {$ref: '#/components/responses/Conflict'}
         '422': {$ref: '#/components/responses/Unprocessable'}
+  /games/darts/matches/{matchId}/finish:
+    servers:
+      - url: http://127.0.0.1:8003/api/v1
+    post:
+      tags: [Darts game]
+      operationId: finishDartsMatch
+      summary: Termina amministrativamente una partita in corso
+      security: [{ serviceBearer: [] }]
+      parameters:
+        - {$ref: '#/components/parameters/MatchId'}
+        - {$ref: '#/components/parameters/CorrelationId'}
+      responses:
+        '200': {description: Stato gioco terminato, content: {application/json: {schema: {$ref: '#/components/schemas/GameState'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '500': {description: Errore interno durante la chiusura}
   /matches/{matchId}/finished:
     post:
       tags: [Matches]

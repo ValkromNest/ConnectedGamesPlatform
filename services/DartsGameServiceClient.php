@@ -34,6 +34,17 @@ final class DartsGameServiceClient
         );
     }
 
+    public function finish(int $matchId): array
+    {
+        return $this->request(
+            'POST',
+            '/api/v1/games/darts/matches/' . rawurlencode((string) $matchId) . '/finish',
+            null,
+            $this->matchesToken(),
+            self::uuid(),
+        );
+    }
+
     public function recordThrow(
         int $matchId,
         int $deviceId,
@@ -109,13 +120,22 @@ final class DartsGameServiceClient
             throw new DartsGameServiceException('Darts game service is unavailable.', 503);
         }
         $decoded = json_decode($response, true);
+        $statusLine = $http_response_header[0] ?? '';
+        if (!preg_match('/\s([0-9]{3})\s/', $statusLine, $matches)) {
+            throw new DartsGameServiceException('Darts game service returned an invalid HTTP response.', 502);
+        }
+        $statusCode = (int) $matches[1];
+        if ($statusCode < 200 || $statusCode >= 300) {
+            $message = is_array($decoded)
+                ? ($decoded['error']['message'] ?? $decoded['message'] ?? null)
+                : null;
+            $message = is_string($message) && $message !== ''
+                ? $message
+                : 'HTTP ' . $statusCode . ' from Darts game service.';
+            throw new DartsGameServiceException($message, $statusCode);
+        }
         if (!is_array($decoded)) {
             throw new DartsGameServiceException('Darts game service returned invalid JSON.', 502);
-        }
-        $statusLine = $http_response_header[0] ?? '';
-        if (!preg_match('/\s([0-9]{3})\s/', $statusLine, $matches) || (int) $matches[1] < 200 || (int) $matches[1] >= 300) {
-            $message = $decoded['error']['message'] ?? 'Darts game service rejected the request.';
-            throw new DartsGameServiceException((string) $message, (int) $matches[1]);
         }
         return $decoded;
     }

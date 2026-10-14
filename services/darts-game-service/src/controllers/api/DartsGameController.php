@@ -12,7 +12,7 @@ use DomainException;
 use Yii;
 use yii\web\Controller;
 use yii\web\Response;
-use yii\web\VerbFilter;
+use yii\filters\VerbFilter;
 
 final class DartsGameController extends Controller
 {
@@ -29,6 +29,7 @@ final class DartsGameController extends Controller
                     'context' => ['PUT'],
                     'state' => ['GET'],
                     'throws' => ['POST'],
+                    'finish' => ['POST'],
                 ],
             ],
         ];
@@ -44,7 +45,7 @@ final class DartsGameController extends Controller
         ) === 1 ? strtolower($provided) : $this->newUuid();
         Yii::$app->response->headers->set('X-Correlation-ID', $this->correlationId);
 
-        $environmentName = $action->id === 'context'
+        $environmentName = in_array($action->id, ['context', 'finish'], true)
             ? 'DARTS_GAME_MATCHES_TOKEN'
             : 'DARTS_GAME_DEVICE_TOKEN';
         $expectedToken = getenv($environmentName) ?: '';
@@ -101,6 +102,18 @@ final class DartsGameController extends Controller
         } catch (\Throwable $exception) {
             Yii::error($exception, __METHOD__);
             return $this->error(500, 'game_state_failed', 'Could not read game state.');
+        }
+    }
+
+    public function actionFinish(string $matchId): array
+    {
+        try {
+            return (new DartsGameService())->finish($matchId, $this->correlationId);
+        } catch (GameNotFoundException $exception) {
+            return $this->error(404, 'game_not_found', $exception->getMessage());
+        } catch (\Throwable $exception) {
+            Yii::error($exception, __METHOD__);
+            return $this->error(500, 'game_finish_failed', 'Could not finish game.');
         }
     }
 

@@ -1,6 +1,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <winhttp.h>
+#include <bcrypt.h>
 #include <conio.h>
 
 #include <algorithm>
@@ -11,7 +12,6 @@
 #include <iomanip>
 #include <iostream>
 #include <map>
-#include <random>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -369,8 +369,13 @@ private:
 
 std::string newUuid() {
     std::array<unsigned char, 16> bytes{};
-    std::random_device random;
-    for (auto& byte : bytes) byte = static_cast<unsigned char>(random());
+    const NTSTATUS status = BCryptGenRandom(
+        nullptr,
+        bytes.data(),
+        static_cast<ULONG>(bytes.size()),
+        BCRYPT_USE_SYSTEM_PREFERRED_RNG
+    );
+    if (status < 0) throw std::runtime_error("Generazione della chiave univoca del tiro non riuscita.");
     bytes[6] = static_cast<unsigned char>((bytes[6] & 0x0f) | 0x40);
     bytes[8] = static_cast<unsigned char>((bytes[8] & 0x3f) | 0x80);
     std::ostringstream value;

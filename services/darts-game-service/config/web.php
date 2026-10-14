@@ -20,6 +20,7 @@ return [
                 'PUT api/v1/games/darts/matches/<matchId:[A-Za-z0-9_-]+>/context' => 'api/darts-game/context',
                 'GET api/v1/games/darts/matches/<matchId:[A-Za-z0-9_-]+>/state' => 'api/darts-game/state',
                 'POST api/v1/games/darts/matches/<matchId:[A-Za-z0-9_-]+>/throws' => 'api/darts-game/throws',
+                'POST api/v1/games/darts/matches/<matchId:[A-Za-z0-9_-]+>/finish' => 'api/darts-game/finish',
             ],
         ],
         'db' => require __DIR__ . '/db.php',

@@ -7,7 +7,7 @@ if errorlevel 1 (
     exit /b 1
 )
 
-g++ -std=c++17 -O2 -Wall -Wextra "%PROJECT_DIR%src\main.cpp" -o "%PROJECT_DIR%device-simulator.exe" -lwinhttp
+g++ -std=c++17 -O2 -Wall -Wextra "%PROJECT_DIR%src\main.cpp" -o "%PROJECT_DIR%device-simulator.exe" -lwinhttp -lbcrypt
 if errorlevel 1 exit /b %errorlevel%
 
 "%PROJECT_DIR%device-simulator.exe" %*

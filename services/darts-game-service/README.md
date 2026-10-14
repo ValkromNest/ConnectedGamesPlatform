@@ -8,7 +8,15 @@ predefinita usa il database connected_games_dartsgame su localhost.
 
 Aprire questa directory come progetto/modulo PhpStorm, impostare l'interprete
 PHP 8.2 o successivo e installare le dipendenze con Composer in questa cartella.
-Avviare `yii serve --docroot=web --port=8003` dalla directory del servizio.
+Configurare il run configuration PHP Script con `yii` come file, la directory
+del servizio come working directory e questi argomenti:
+
+```text
+serve 127.0.0.1:8003 --docroot=web --router=web/index.php
+```
+
+Il router `web/index.php` è necessario perché il server PHP integrato inoltri a
+Yii le route API che non corrispondono a file statici.
 
 Prima dell'avvio, creare connected_games_dartsgame in MySQL XAMPP e applicare
 le migrazioni:

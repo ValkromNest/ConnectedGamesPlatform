@@ -111,6 +111,22 @@ final class DartsGameService
         ];
     }
 
+    public function finish(string $matchId, string $correlationId): array
+    {
+        $match = GameMatch::findOne($matchId);
+        if ($match === null) {
+            throw new GameNotFoundException('Game match not found.');
+        }
+        if ($match->status === 'RUNNING') {
+            $match->status = 'FINISHED';
+            $match->finished_at = gmdate('Y-m-d H:i:s');
+            if (!$match->save(false, ['status', 'finished_at'])) {
+                throw new DomainException('Could not finish game match.');
+            }
+        }
+        return $this->state($matchId, $correlationId);
+    }
+
     /** @return array<string, mixed> */
     public function recordThrow(
         string $matchId,
@@ -335,12 +351,12 @@ final class DartsGameService
                 throw new DomainException('Stored score does not match replayed throws.');
             }
         }
-        if (($match->status === 'FINISHED') !== ($winnerPlayerId !== null)) {
+        if ($winnerPlayerId !== null && $match->status !== 'FINISHED') {
             throw new DomainException('Game status does not match its throws.');
         }
         return [
             'remaining' => $remaining,
-            'currentPlayer' => $winnerPlayerId === null ? $players[$currentIndex] : null,
+            'currentPlayer' => $winnerPlayerId === null && $match->status === 'RUNNING' ? $players[$currentIndex] : null,
             'dartsInVisit' => $dartsInVisit,
             'visitStartScore' => $visitStartScore,
             'winnerPlayerId' => $winnerPlayerId,
