@@ -4,99 +4,72 @@ declare(strict_types=1);
 
 namespace app\models;
 
+use app\services\IdentityServiceClient;
+use app\services\IdentityServiceException;
 use Yii;
 use yii\base\Model;
-use yii\base\Security;
 
-/**
- * LoginForm is the model behind the login form.
- *
- * @property-read User|null $user
- *
- */
-class LoginForm extends Model
+final class LoginForm extends Model
 {
     public string $username = '';
     public string $password = '';
-    public bool $rememberMe = true;
-    private User|null $_user = null;
-    private bool $_userLoaded = false;
-    public function __construct(private readonly Security $security, $config = [])
-    {
-        parent::__construct($config);
-    }
+    private ?array $authentication = null;
 
-    /**
-     * @return array the validation rules.
-     */
     public function rules(): array
     {
         return [
-            // username and password are both required
             [['username', 'password'], 'required'],
-            // rememberMe must be a boolean value
-            ['rememberMe', 'boolean'],
-            // password is validated by validatePassword()
-            ['password', 'validatePassword'],
-            ['password', 'validateAdministrator'],
+            [['username'], 'string', 'max' => 100],
+            ['password', 'authenticate'],
         ];
     }
 
-    /**
-     * Validates the password.
-     * This method serves as the inline validation for password.
-     *
-     * @param string $attribute the attribute currently being validated
-     * @param array $params the additional name-value pairs given in the rule
-     */
-    public function validatePassword(string $attribute, array|null $params): void
+    public function authenticate(string $attribute): void
     {
-        if (!$this->hasErrors()) {
-            $user = $this->getUser();
-
-            if (!$user || !$this->security->validatePassword($this->password, $user->passwordHash)) {
-                $this->addError($attribute, 'Incorrect username or password.');
-            }
+        if ($this->hasErrors()) {
+            return;
         }
-    }
+        try {
+            $this->authentication = (new IdentityServiceClient())->login($this->username, $this->password);
+        } catch (IdentityServiceException $exception) {
+            $message = match ($exception->statusCode) {
+                401 => 'Username o password non corretti.',
+                429 => 'Troppi tentativi di accesso. Attendi qualche minuto e riprova.',
+                default => 'Il servizio di login non è disponibile. Riprova tra poco.',
+            };
+            $this->addError($attribute, $message);
+            return;
+        }
 
-    /**
-     * Limita l'accesso web agli amministratori; i player usano le applicazioni esterne.
-     *
-     * @param array<string, mixed>|null $params
-     */
-    public function validateAdministrator(string $attribute, array|null $params): void
-    {
-        if (!$this->hasErrors() && !$this->getUser()?->isAdministrator()) {
+        $user = $this->authentication['user'] ?? null;
+        $token = $this->authentication['accessToken'] ?? null;
+        if (!is_array($user) || ($user['role'] ?? null) !== 'admin'
+            || !is_string($user['sub'] ?? null) || !is_string($user['username'] ?? null)
+            || !is_string($token) || $token === ''
+        ) {
+            if (is_string($token) && $token !== '') {
+                try {
+                    (new IdentityServiceClient())->logout($token);
+                } catch (IdentityServiceException) {
+                    // The token expires automatically if it cannot be revoked here.
+                }
+            }
+            $this->authentication = null;
             $this->addError($attribute, 'Accesso riservato agli amministratori.');
         }
     }
 
-    /**
-     * Logs in a user using the provided username and password.
-     * @return bool whether the user is logged in successfully
-     */
     public function login(): bool
     {
-        if ($this->validate()) {
-            return Yii::$app->user->login($this->getUser(), $this->rememberMe ? 3600 * 24 * 30 : 0);
+        if (!$this->validate() || $this->authentication === null) {
+            return false;
         }
-
-        return false;
-    }
-
-    /**
-     * Finds user by [[username]]
-     *
-     * @return User|null
-     */
-    public function getUser(): User|null
-    {
-        if (!$this->_userLoaded) {
-            $this->_user = User::findByUsername($this->username);
-            $this->_userLoaded = true;
+        Yii::$app->session->set('identity_service_access_token', $this->authentication['accessToken']);
+        $identity = new AuthenticatedUser($this->authentication['user']);
+        if (!Yii::$app->user->login($identity, 0)) {
+            Yii::$app->session->remove('identity_service_access_token');
+            return false;
         }
-
-        return $this->_user;
+        return true;
     }
 }

@@ -9,9 +9,9 @@ use app\enums\MatchStatus;
 use app\models\DartsMatch;
 use app\models\Game;
 use app\models\Device;
-use app\models\User;
 use app\models\MatchPlayer;
 use app\services\DartsGameServiceClient;
+use app\services\IdentityServiceClient;
 use DomainException;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
@@ -93,15 +93,24 @@ final class DartsMatchController extends AdminController
     public function actionView(int $id): string
     {
         $model = $this->findDartsMatch($id);
-        $model->populateRelation('matchPlayers', $model->getMatchPlayers()->with('user')->orderBy(['turn_order' => SORT_ASC, 'id' => SORT_ASC])->all());
-        $assignedUserIds = array_map(static fn (MatchPlayer $player): int => (int) $player->user_id, $model->matchPlayers);
-        $availablePlayers = User::find()
-            ->select('username')
-            ->where(['role' => 'player'])
-            ->andFilterWhere(['not in', 'id', $assignedUserIds])
-            ->orderBy(['username' => SORT_ASC])
-            ->indexBy('id')
-            ->column();
+        $model->populateRelation('matchPlayers', $model->getMatchPlayers()->orderBy(['turn_order' => SORT_ASC, 'id' => SORT_ASC])->all());
+        $availablePlayers = [];
+        if ($model->status === MatchStatus::OPEN->value) {
+            try {
+                $assignedSubjects = array_map(
+                    static fn (MatchPlayer $player): string => (string) $player->identity_subject_id,
+                    $model->matchPlayers,
+                );
+                foreach ($this->identityService()->players($this->identityAccessToken()) as $player) {
+                    if (!in_array($player['sub'], $assignedSubjects, true)) {
+                        $availablePlayers[$player['sub']] = $player['username'];
+                    }
+                }
+            } catch (\Throwable $exception) {
+                Yii::warning('Could not load players from identity service: ' . $exception->getMessage(), __METHOD__);
+                Yii::$app->session->setFlash('error', 'Impossibile caricare i player dal servizio identità. Verifica che sia attivo e riprova.');
+            }
+        }
         $gameState = null;
         if (in_array((int) $model->status, [MatchStatus::RUNNING->value, MatchStatus::FINISHED->value], true)) {
             try {
@@ -125,14 +134,21 @@ final class DartsMatchController extends AdminController
             if ((int) MatchPlayer::find()->where(['match_id' => $id])->count() >= (int) $model->max_players) {
                 throw new DomainException('La partita ha già raggiunto il numero massimo di partecipanti.');
             }
-            $userId = (int) $this->request->post('user_id');
-            $user = User::find()->where(['id' => $userId, 'role' => 'player'])->one();
+            $subjectId = trim((string) $this->request->post('player_subject_id', ''));
+            $user = null;
+            foreach ($this->identityService()->players($this->identityAccessToken()) as $candidate) {
+                if (hash_equals($candidate['sub'], $subjectId)) {
+                    $user = $candidate;
+                    break;
+                }
+            }
             if ($user === null) {
                 throw new DomainException('Seleziona un player valido.');
             }
             $participant = new MatchPlayer([
                 'match_id' => $id,
-                'user_id' => $user->id,
+                'identity_subject_id' => $user['sub'],
+                'display_name' => $user['username'],
                 'score' => 501,
                 'turn_order' => (int) MatchPlayer::find()->where(['match_id' => $id])->count() + 1,
             ]);
@@ -142,12 +158,15 @@ final class DartsMatchController extends AdminController
             Yii::$app->session->setFlash('success', 'Player aggiunto alla partita.');
         } catch (DomainException $exception) {
             Yii::$app->session->setFlash('error', $exception->getMessage());
+        } catch (\Throwable $exception) {
+            Yii::warning('Could not add player from identity service: ' . $exception->getMessage(), __METHOD__);
+            Yii::$app->session->setFlash('error', 'Impossibile verificare il player con il servizio identità. Verifica che sia attivo e riprova.');
         }
 
         return $this->redirect(['view', 'id' => $id]);
     }
 
-    public function actionRemovePlayer(int $id, int $userId): Response
+    public function actionRemovePlayer(int $id, string $playerSubjectId): Response
     {
         $model = $this->findDartsMatch($id);
         if ($model->status !== MatchStatus::OPEN->value) {
@@ -155,7 +174,7 @@ final class DartsMatchController extends AdminController
             return $this->redirect(['view', 'id' => $id]);
         }
 
-        $participant = MatchPlayer::findOne(['match_id' => $id, 'user_id' => $userId]);
+        $participant = MatchPlayer::findOne(['match_id' => $id, 'identity_subject_id' => $playerSubjectId]);
         if ($participant === null) {
             Yii::$app->session->setFlash('error', 'Player non trovato tra i partecipanti.');
             return $this->redirect(['view', 'id' => $id]);
@@ -188,13 +207,12 @@ final class DartsMatchController extends AdminController
         }
 
         $players = MatchPlayer::find()
-            ->with('user')
             ->where(['match_id' => $id])
             ->orderBy(['turn_order' => SORT_ASC, 'id' => SORT_ASC])
             ->all();
         $contextPlayers = array_map(static fn (MatchPlayer $player): array => [
-            'playerId' => (string) $player->user_id,
-            'displayName' => (string) ($player->user?->username ?? ''),
+            'playerId' => (string) $player->identity_subject_id,
+            'displayName' => (string) $player->display_name,
             'turnOrder' => (int) $player->turn_order,
         ], $players);
 
@@ -272,6 +290,20 @@ final class DartsMatchController extends AdminController
         }
 
         return $model;
+    }
+
+    private function identityService(): IdentityServiceClient
+    {
+        return new IdentityServiceClient();
+    }
+
+    private function identityAccessToken(): string
+    {
+        $token = Yii::$app->session->get('identity_service_access_token');
+        if (!is_string($token) || $token === '') {
+            throw new \RuntimeException('Identity service session token is missing.');
+        }
+        return $token;
     }
 
     private static function contextIdempotencyKey(int $matchId): string

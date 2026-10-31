@@ -5,31 +5,23 @@ declare(strict_types=1);
 namespace app\tests\Unit;
 
 use app\controllers\LoginController;
-use app\models\User;
+use app\models\AuthenticatedUser;
 use Yii;
-use yii\base\Security;
-use yii\web\View;
+use yii\web\Response;
 
 final class LoginTest extends \Codeception\Test\Unit
 {
-    public function testRenderLoginWrongUsername(): void
+    public function testAuthenticatedUserIsRedirectedFromLoginPage(): void
     {
-        $controller = new LoginController(
-            'login',
-            Yii::$app,
-            new Security(),
-        );
+        Yii::$app->user->login(new AuthenticatedUser([
+            'sub' => '8fc4f99c-d93c-4e9d-b132-7d8a71cfa225',
+            'username' => 'admin',
+            'role' => 'admin',
+        ]));
 
-        $view = new View(['context' => $controller]);
+        $response = (new LoginController('login', Yii::$app))->actionIndex();
 
-        Yii::$app->user->login(new User());
-
-        $controller->actionIndex();
-
-        self::assertStringNotContainsString(
-            '>admin</button>',
-            $view->render('//layouts/main.php', ['content' => 'Hello World°']),
-            'Failed asserting that the administrator username is not rendered for a wrong username.',
-        );
+        self::assertInstanceOf(Response::class, $response);
+        self::assertFalse(Yii::$app->user->isGuest);
     }
 }

@@ -16,7 +16,7 @@ Il gestionale resta responsabile della creazione della partita, dell'assegnazion
 
 ## Ruolo del simulatore e del dispositivo
 
-- Il comando `php yii simulatore/play` eseguito nel progetto Yii2 richiama direttamente i servizi applicativi: non ha bisogno di passare dalle API.
+- Il simulatore supportato è `device-simulator-cli`: comunica con l'API HTTP dell'applicazione e non accede direttamente ai servizi o al database.
 - Un'app separata che simula il dispositivo, anche se è una semplice applicazione console, comunica invece con il server tramite API HTTP.
 - Il dispositivo analogico e l'app che ne fa le veci sono client della stessa API e seguono lo stesso modello di autenticazione.
 - Il server rimane l'unico componente che accede direttamente al database e applica le regole di gioco.

@@ -89,10 +89,6 @@ $labelOptions = ['class' => 'form-label fw-semibold small'];
                         ])->passwordInput()->label('Password', $labelOptions) ?>
                     </div>
 
-                    <div class="mb-4">
-                        <?= $form->field($model, 'rememberMe')->checkbox() ?>
-                    </div>
-
                     <div class="d-grid">
                         <?= Html::submitButton(
                             'Accedi',

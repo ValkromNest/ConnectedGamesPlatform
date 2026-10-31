@@ -1,3 +1,5 @@
+Nota: questo documento descrive il flusso monolitico precedente alla separazione dell'identity service. Per istruzioni e architettura attuali fare riferimento a README.md e STRUTTURA_MICROSERVIZI.md.
+
 # Connected Games Platform — flusso di lavoro
 
 Questo file è il riferimento tra le sessioni di sviluppo. Aggiornare la sezione **Stato** e spuntare le attività concluse al termine di ogni sessione.
@@ -47,7 +49,7 @@ Obiettivo: allineare Yii2 alle tabelle già esistenti, senza modificarle involon
 | `tbl_user` | `User` | `username` univoco; `password_hash`, `auth_key`, `role` (predefinito `player`). |
 | `tbl_game` | `Game` | `code` univoco; contiene il gioco iniziale `Freccette` (`id=1`, `code=darts`). |
 | `tbl_matches` | `Match` | FK `game_id → tbl_game.id`; stato numerico 0–3, massimo 2 player predefinito. |
-| `tbl_match_players` | `MatchPlayer` | FK `match_id → tbl_matches.id`, `user_id → tbl_user.id`; vincolo univoco `(match_id, user_id)`, punteggio e ordine turno. |
+| `tbl_match_players` | `MatchPlayer` | FK `match_id → tbl_matches.id`; subject ID e snapshot del nome dal servizio identità; vincolo univoco `(match_id, identity_subject_id)`, punteggio e ordine turno. |
 | `tbl_throws` | `Throw` | FK `match_id → tbl_matches.id`, `user_id → tbl_user.id`; settore, moltiplicatore, punteggio e data. |
 
 Gli indici coprono tutte le chiavi esterne e i vincoli necessari al dominio. I dati iniziali contengono solo il gioco Freccette; non sono presenti utenti (quindi nemmeno amministratori), partite, partecipanti o tiri.
@@ -89,11 +91,11 @@ Obiettivo: proteggere l'area web di amministrazione.
 #### Esito dell'implementazione (2026-09-23)
 
 - L'URL iniziale visualizza il form di accesso; dopo un login valido l'utente viene reindirizzato a `dashboard/index`, attualmente intenzionalmente vuota.
-- Il login legge `tbl_user`, verifica `password_hash` mediante `Yii::$app->security` e consente l'accesso solo a utenti con `role = admin`, senza creare un modello amministratore separato.
+- Il login delega autenticazione e ruolo admin a `identity-service`; il monolite conserva il token nella sessione server e verifica il subject tramite API.
 - Dashboard e logout sono protetti dalla sessione Yii2; la dashboard verifica anche esplicitamente il ruolo amministrativo. Il logout invalida la sessione e riporta al form di accesso.
 - I player sono respinti dal login web. Il database non contiene ancora un amministratore: prima dell'uso effettivo occorre creare un utente con password hash valida e ruolo `admin`.
 - Per creare il primo amministratore in modo locale e interattivo: `php yii admin/create <username>`. Il comando non accetta password come argomento, richiede password e conferma nascoste, rifiuta duplicati e richiede conferma prima del salvataggio.
-- Per creare un player in modo locale e interattivo: `php yii player/create <username>`. Il comando applica gli stessi controlli e salva il ruolo `player`; il player non può autenticarsi nell'interfaccia web amministrativa.
+- Creare gli account player tramite `php yii identity/create-user <username> player` nella cartella `services/identity-service`; l'app admin legge da lì i player abilitati quando assegna i partecipanti.
 
 ### Fase 4 — gestione web delle partite
 

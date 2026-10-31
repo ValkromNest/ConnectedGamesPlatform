@@ -6,7 +6,6 @@ namespace app\controllers;
 
 use Yii;
 use app\models\LoginForm;
-use yii\base\Security;
 use yii\filters\AccessControl;
 use yii\filters\VerbFilter;
 use yii\web\Controller;
@@ -14,15 +13,6 @@ use yii\web\Response;
 
 final class LoginController extends Controller
 {
-    public function __construct(
-        $id,
-        $module,
-        private readonly Security $security,
-        $config = [],
-    ) {
-        parent::__construct($id, $module, $config);
-    }
-
     public function behaviors(): array
     {
         return [
@@ -32,7 +22,6 @@ final class LoginController extends Controller
                 'rules' => [
                     [
                         'allow' => true,
-                        'roles' => ['@'],
                     ],
                 ],
             ],
@@ -51,7 +40,7 @@ final class LoginController extends Controller
             return $this->redirect(['/dashboard/index']);
         }
 
-        $model = new LoginForm($this->security);
+        $model = new LoginForm();
 
         if ($model->load($this->request->post()) && $model->login()) {
             return $this->redirect(['/dashboard/index']);
@@ -64,6 +53,15 @@ final class LoginController extends Controller
 
     public function actionLogout(): Response
     {
+        $token = Yii::$app->session->get('identity_service_access_token');
+        if (is_string($token) && $token !== '') {
+            try {
+                (new \app\services\IdentityServiceClient())->logout($token);
+            } catch (\Throwable $exception) {
+                Yii::warning('Identity service logout failed: ' . $exception->getMessage(), __METHOD__);
+            }
+        }
+        Yii::$app->session->remove('identity_service_access_token');
         Yii::$app->user->logout();
 
         return $this->redirect(['/login/index']);
