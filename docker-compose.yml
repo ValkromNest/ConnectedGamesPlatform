@@ -15,3 +15,18 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.8.1
+    command: ["start-dev", "--import-realm"]
+    ports:
+      - '127.0.0.1:8080:8080'
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_BOOTSTRAP_ADMIN_USERNAME:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_BOOTSTRAP_ADMIN_PASSWORD:?Set KC_BOOTSTRAP_ADMIN_PASSWORD}
+    volumes:
+      - keycloak-data:/opt/keycloak/data
+      - ./config/keycloak:/opt/keycloak/data/import:ro
+
+volumes:
+  keycloak-data:

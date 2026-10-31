@@ -28,6 +28,7 @@ final class AuthenticatedUser implements IdentityInterface
             return null;
         }
         try {
+            $token = \app\services\KeycloakClient::accessToken();
             $profile = (new IdentityServiceClient())->me($token);
         } catch (Throwable $exception) {
             Yii::warning('Identity validation failed: ' . $exception->getMessage(), __METHOD__);

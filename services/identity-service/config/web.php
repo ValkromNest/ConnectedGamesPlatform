@@ -19,9 +19,7 @@ return [
             'enablePrettyUrl' => true,
             'showScriptName' => false,
             'rules' => [
-                'POST api/v1/auth/login' => 'api/auth/login',
                 'GET api/v1/auth/me' => 'api/auth/me',
-                'POST api/v1/auth/logout' => 'api/auth/logout',
                 'GET api/v1/users/players' => 'api/auth/players',
             ],
         ],

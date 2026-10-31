@@ -12,6 +12,21 @@ use yii\console\ExitCode;
 
 final class IdentityController extends Controller
 {
+    public function actionLinkKeycloak(string $username, string $subject, string $issuer): int
+    {
+        $user = IdentityUser::findOne(['username' => $username]);
+        if ($user === null || $subject === '' || !filter_var($issuer, FILTER_VALIDATE_URL)) {
+            $this->stderr("Profilo o identità non validi.\n");
+            return ExitCode::DATAERR;
+        }
+        $user->setAttribute('keycloak_subject', $subject);
+        $user->setAttribute('keycloak_issuer', rtrim($issuer, '/'));
+        $user->save(false, ['keycloak_subject', 'keycloak_issuer']);
+        IdentityAccessToken::updateAll(['revoked_at' => gmdate('Y-m-d H:i:s')], ['identity_user_id' => $user->id]);
+        $this->stdout("Profilo associato a Keycloak.\n");
+        return ExitCode::OK;
+    }
+
     public function actionCreateUser(string $username, string $role = 'admin'): int
     {
         $username = trim($username);
