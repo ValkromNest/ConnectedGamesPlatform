@@ -67,6 +67,7 @@ final class LoginController extends Controller
                 throw new \RuntimeException('Administrator access required.');
             }
             KeycloakClient::store($tokens);
+            Yii::$app->session->set('identity_service_profile', $profile);
             if (!Yii::$app->user->login(new AuthenticatedUser($profile), 0)) {
                 throw new \RuntimeException('Session creation failed.');
             }
@@ -74,6 +75,7 @@ final class LoginController extends Controller
         } catch (\Throwable $exception) {
             Yii::warning('OAuth login failed: ' . $exception->getMessage(), __METHOD__);
             Yii::$app->session->remove('identity_service_access_token');
+            Yii::$app->session->remove('identity_service_profile');
             Yii::$app->session->remove('keycloak_refresh_token');
             Yii::$app->session->remove('keycloak_expires_at');
             Yii::$app->session->setFlash('error', 'Accesso non riuscito. Verifica che il tuo profilo sia abilitato e associato a un amministratore.');

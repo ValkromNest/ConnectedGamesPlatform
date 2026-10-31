@@ -28,11 +28,25 @@ final class AuthenticatedUser implements IdentityInterface
             return null;
         }
         try {
+            $previousToken = $token;
             $token = \app\services\KeycloakClient::accessToken();
-            $profile = (new IdentityServiceClient())->me($token);
+            $profile = Yii::$app->session->get('identity_service_profile');
+            if ($token !== $previousToken || !is_array($profile)) {
+                $profile = (new IdentityServiceClient())->me($token);
+                Yii::$app->session->set('identity_service_profile', $profile);
+            }
+            if (!is_string($profile['sub'] ?? null)
+                || !is_string($profile['username'] ?? null)
+                || !is_string($profile['role'] ?? null)
+                || !hash_equals((string) $id, $profile['sub'])) {
+                throw new \RuntimeException('Invalid session profile.');
+            }
         } catch (Throwable $exception) {
             Yii::warning('Identity validation failed: ' . $exception->getMessage(), __METHOD__);
             Yii::$app->session->remove('identity_service_access_token');
+            Yii::$app->session->remove('identity_service_profile');
+            Yii::$app->session->remove('keycloak_refresh_token');
+            Yii::$app->session->remove('keycloak_expires_at');
             return null;
         }
         return hash_equals((string) $id, $profile['sub']) ? new static($profile) : null;
