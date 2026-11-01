@@ -23,6 +23,9 @@ Thumbs.db
 # Local C++ simulator build output
 /device-simulator-cli/device-simulator.exe
 
+# Local Keycloak installations and data
+/keycloak-*/
+
 # composer itself is not needed
 composer.phar
 
@@ -39,3 +42,6 @@ tests/_support/_generated
 
 #vagrant folder
 /.vagrant
+
+# Local Keycloak distributions and databases (one per PC)
+/keycloak*/

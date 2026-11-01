@@ -64,42 +64,9 @@ $labelOptions = ['class' => 'form-label fw-semibold small'];
                         <p class="text-body-secondary small">Accedi con le credenziali di amministratore</p>
                     </div>
 
-                    <?php $form = ActiveForm::begin(['id' => 'login-form']); ?>
-
-                    <div class="mb-3">
-                        <?= $form->field($model, 'username', [
-                            'options' => ['class' => 'mb-0'],
-                            'template' => sprintf($htmlIcon, '&#128100;'),
-                            'inputOptions' => [
-                                'class' => 'form-control',
-                                'placeholder' => 'username',
-                                'autofocus' => true,
-                            ],
-                        ])->textInput()->label('Username', $labelOptions) ?>
-                    </div>
-
-                    <div class="mb-3">
-                        <?= $form->field($model, 'password', [
-                            'options' => ['class' => 'mb-0'],
-                            'template' => sprintf($htmlIcon, '&#128274;'),
-                            'inputOptions' => [
-                                'class' => 'form-control',
-                                'placeholder' => 'Password',
-                            ],
-                        ])->passwordInput()->label('Password', $labelOptions) ?>
-                    </div>
-
                     <div class="d-grid">
-                        <?= Html::submitButton(
-                            'Accedi',
-                            [
-                                'class' => 'btn login-btn btn-lg rounded-3 text-white',
-                                'name' => 'login-button',
-                            ],
-                        ) ?>
+                        <?= Html::a('Accedi', ['/login/authorize'], ['class' => 'btn login-btn btn-lg rounded-3 text-white']) ?>
                     </div>
-
-                    <?php ActiveForm::end(); ?>
 
                     <p class="text-body-secondary text-center mt-3 mb-0 small">
                         Accesso riservato agli amministratori della piattaforma.
