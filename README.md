@@ -72,6 +72,7 @@ I ruoli applicativi `admin` e `player` sono conservati nell'identity-service. La
 
 ```text
 config/                         Configurazione dell'applicazione principale
+commands/                       Comandi console, inclusa la creazione dei database
 controllers/                    Console web e API del dispositivo
 models/                         Modelli della piattaforma
 views/                          Pagine della console
@@ -79,7 +80,7 @@ services/                       Client HTTP e integrazioni dell'app principale
   identity-service/             Microservizio dei profili e verifica token
   darts-game-service/           Microservizio del gioco freccette
 device-simulator-cli/           Simulatore C++ dei dispositivi
-database/                       Materiale SQL disponibile
+database/                       Files utilizzati per la creazione del database
 migrations/                     Migrazioni dell'applicazione principale
 tests/                          Suite di test presenti nel progetto
 ```
