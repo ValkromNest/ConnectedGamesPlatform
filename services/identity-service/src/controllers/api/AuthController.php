@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace identity\controllers\api;
 
-use identity\models\IdentityAccessToken;
-use identity\models\IdentityLoginAttempt;
 use identity\models\IdentityUser;
+use identity\services\KeycloakTokenVerifier;
 use Yii;
 use yii\filters\VerbFilter;
 use yii\web\Controller;
@@ -77,9 +76,8 @@ final class AuthController extends Controller
         if (!preg_match('/^Bearer ([A-Za-z0-9._~-]+)$/', $authorization, $matches)) {
             return null;
         }
-        require_once dirname(__DIR__, 4) . '/KeycloakClient.php';
         try {
-            $client = new \app\services\KeycloakClient();
+            $client = new KeycloakTokenVerifier();
             $claims = $client->inspect($matches[1]);
         } catch (\Throwable $exception) {
             Yii::warning('Access token verification failed.', __METHOD__);

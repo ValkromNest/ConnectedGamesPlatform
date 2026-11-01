@@ -54,21 +54,6 @@ final class KeycloakClient
         return $result;
     }
 
-    public function inspect(string $token): array
-    {
-        $claims = $this->post('token/introspect', ['token' => $token]);
-        $audience = (array) ($claims['aud'] ?? []);
-        if (($claims['active'] ?? false) !== true
-            || ($claims['iss'] ?? null) !== $this->issuer()
-            || !in_array($this->setting('KEYCLOAK_AUDIENCE'), $audience, true)
-            || !is_string($claims['sub'] ?? null)
-            || ($claims['exp'] ?? 0) <= time()
-        ) {
-            throw new RuntimeException('Invalid access token.');
-        }
-        return $claims;
-    }
-
     public static function accessToken(): string
     {
         $session = \Yii::$app->session;
