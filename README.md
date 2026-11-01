@@ -22,9 +22,9 @@ La piattaforma comprende un'applicazione principale e due microservizi Yii2, ese
 | Componente | Responsabilità | Dati di proprietà |
 | --- | --- | --- |
 | Applicazione principale | Interfaccia amministrativa, gestione generale delle partite, partecipanti e dispositivi; API del simulatore e coordinamento del servizio di gioco | Catalogo giochi, partite amministrative, partecipazioni e dispositivi |
-| Identity-service | Profili, ruoli applicativi, associazione delle identità Keycloak e verifica degli access token tramite introspezione | Profili locali e collegamenti alle identità Keycloak |
-| Darts-game-service | Regole delle freccette, registrazione dei tiri, turni, punteggi ed esito sportivo | Stato di gioco, giocatori della partita e tiri |
-| Keycloak | Autenticazione degli utenti, emissione e gestione dei token | Account e credenziali Keycloak |
+| [Identity-service](services/identity-service/README.md) | Profili, ruoli applicativi, associazione delle identità Keycloak e verifica degli access token tramite introspezione | Profili locali e collegamenti alle identità Keycloak |
+| [Darts-game-service](services/darts-game-service/README.md) | Regole delle freccette, registrazione dei tiri, turni, punteggi ed esito sportivo | Stato di gioco, giocatori della partita e tiri |
+| [Keycloak](docs/KEYCLOAK.md) | Autenticazione degli utenti, emissione e gestione dei token | Account e credenziali Keycloak |
 
 Le tre applicazioni PHP hanno configurazioni e connessioni database distinte. I due microservizi dispongono di entry point, dipendenze Composer e migrazioni propri. Il codice è organizzato in un unico repository.
 
