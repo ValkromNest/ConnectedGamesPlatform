@@ -1,3 +1,11 @@
+# Connected Games Platform — Project Notice
+
+This product was developed for a university examination. The original code and materials authored for Connected Games Platform may not be modified or distributed without the author's prior written authorization.
+
+This restriction applies to the author's original contributions. Yii and other third-party components remain subject to their respective licenses.
+
+---
+
 Copyright © 2008 by Yii Software LLC (http://www.yiisoft.com)
 All rights reserved.
 
