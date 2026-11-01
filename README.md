@@ -1,155 +1,95 @@
 # Connected Games Platform
 
-Applicazione Yii2 principale per amministrare partite e dispositivi, affiancata da due servizi autonomi: autenticazione e gestione delle partite di Freccette. Il codice resta fuori dalle cartelle XAMPP: XAMPP fornisce MySQL (e Apache, se usato); PhpStorm avvia i server PHP alle porte `8080`, `8001` e `8003`.
+Connected Games Platform è una piattaforma web per amministrare partite e dispositivi di gioco connessi. Il gioco attualmente implementato è **Freccette 501**, gestito attraverso una console amministrativa e un simulatore di dispositivo.
 
-## Requisiti
+Il progetto applica i concetti di **microservizi con API HTTP/JSON** e **autenticazione centralizzata con Keycloak**, separando la gestione della piattaforma dalle regole del gioco e dai profili degli utenti.
 
-- Windows, XAMPP con MySQL e PHP 8.2 o successivo.
-- Composer 2 e Git.
-- PhpStorm con interprete PHP 8.2+ configurato e con `pdo_mysql` attivo.
+## Funzionalità
 
-Verifica PHP ed estensione PDO MySQL:
+- Accesso alla console amministrativa tramite Keycloak.
+- Creazione e gestione delle partite di freccette.
+- Assegnazione dei giocatori tramite i profili dell'identity-service.
+- Gestione dei dispositivi, abilitazione e associazione alle partite.
+- Apertura, avvio e terminazione delle partite.
+- Invio dei lanci e consultazione dello stato attraverso il simulatore C++.
+- Gestione dei punteggi 501, dei turni, del bust e del checkout double-out.
+- Consultazione dello stato e dei risultati delle partite nella console web.
 
-```powershell
-php --version
-php -m | findstr /I "PDO pdo_mysql"
+## Architettura
+
+La piattaforma comprende un'applicazione principale e due microservizi Yii2, eseguiti come processi separati. Keycloak è il server esterno dedicato all'autenticazione.
+
+| Componente | Responsabilità | Dati di proprietà |
+| --- | --- | --- |
+| Applicazione principale | Interfaccia amministrativa, gestione generale delle partite, partecipanti e dispositivi; API del simulatore e coordinamento del servizio di gioco | Catalogo giochi, partite amministrative, partecipazioni e dispositivi |
+| Identity-service | Profili, ruoli applicativi, associazione delle identità Keycloak e verifica degli access token tramite introspezione | Profili locali e collegamenti alle identità Keycloak |
+| Darts-game-service | Regole delle freccette, registrazione dei tiri, turni, punteggi ed esito sportivo | Stato di gioco, giocatori della partita e tiri |
+| Keycloak | Autenticazione degli utenti, emissione e gestione dei token | Account e credenziali Keycloak |
+
+Le tre applicazioni PHP hanno configurazioni e connessioni database distinte. I due microservizi dispongono di entry point, dipendenze Composer e migrazioni propri. Il codice è organizzato in un unico repository.
+
+## Comunicazione tra componenti
+
+```mermaid
+flowchart LR
+    B[Browser] --> W[Applicazione web]
+    B --> K[Keycloak]
+    W --> K
+    W --> I[Identity-service]
+    I --> K
+    S[Simulatore dispositivo] --> W
+    W --> D[Darts-game-service]
+    W --> DB1[(Database piattaforma)]
+    I --> DB2[(Database identity)]
+    D --> DB3[(Database darts)]
 ```
 
-## 1. Clonare il progetto e installare le dipendenze
+Il simulatore comunica con l'API dell'applicazione principale. Questa identifica il dispositivo e la partita e inoltra le operazioni al darts-game-service. Il servizio applica le regole e restituisce l'esito tramite HTTP; l'applicazione principale coordina il ciclo amministrativo della partita e ne presenta lo stato.
 
-```powershell
-git clone <URL-DEL-REPOSITORY> connected_games_platform
-cd connected_games_platform
-composer install
-```
+Le API interne utilizzano JSON e credenziali dedicate. L'integrazione con il gioco prevede chiavi di idempotenza per riconoscere richieste ripetute e identificativi di correlazione per seguire le chiamate. Le credenziali dei dispositivi e dei servizi sono distinte dai token degli utenti web.
 
-Ogni servizio ha il proprio `composer.json` e `vendor`:
+## Autenticazione e profili
 
-```powershell
-cd services/identity-service
-composer install
-cd ../darts-game-service
-composer install
-cd ../..
-```
+Il login utilizza **Authorization Code con PKCE S256** e gli endpoint OpenID Connect di Keycloak. L'applicazione conserva i token nella sessione PHP e gestisce rinnovo e logout.
 
-Eseguire Composer con lo stesso interprete PHP configurato in PhpStorm.
+L'identity-service verifica gli access token mediante introspezione autenticata, controllandone validità, emittente, audience e scadenza. L'identità Keycloak viene collegata esplicitamente a un profilo locale tramite subject ed issuer, mantenendo stabile l'identificativo applicativo del giocatore.
 
-## 2. Preparare MySQL in XAMPP
+I ruoli applicativi `admin` e `player` sono conservati nell'identity-service. La console è riservata agli amministratori; Keycloak gestisce le credenziali, mentre i controlli sui profili e sulle operazioni restano nella piattaforma.
 
-Avviare MySQL dal pannello XAMPP e creare questi database in phpMyAdmin:
+## Tecnologie
 
-- `connected_games_db` per l'applicazione principale;
-- `connected_games_identity` per il servizio di autenticazione;
-- `connected_games_dartsgame` per il servizio Freccette.
+| Ambito | Tecnologie |
+| --- | --- |
+| Backend web e servizi | PHP 8.2+, Yii2, Composer |
+| Persistenza applicativa | MySQL, ActiveRecord e migrazioni Yii |
+| Interfaccia web | Bootstrap 5 |
+| Comunicazione | API HTTP/JSON |
+| Autenticazione | Keycloak, Authorization Code con PKCE, introspezione token |
+| Simulatore | C++ per Windows |
+| Sviluppo locale | PhpStorm e MySQL tramite XAMPP; Keycloak avviabile direttamente su Windows |
 
-L'applicazione principale usa `localhost`, utente `root` e password vuota. Se i valori sono diversi, modificarli in `config/db.php`.
-
-> Il repository non contiene un dump o una procedura completa per creare da zero tutte le tabelle di `connected_games_db`. Su una macchina nuova serve importare lo schema iniziale fornito separatamente.
-
-Applicare la migrazione del servizio identità:
-
-```powershell
-cd services/identity-service
-php yii migrate
-```
-
-Applicare la migrazione del servizio Freccette:
-
-```powershell
-cd ../darts-game-service
-php yii migrate --migrationPath=@darts/migrations
-cd ../..
-```
-
-Entrambe le migrazioni creano tabelle con il prefisso `tbl_` nel rispettivo database.
-
-Dopo aver installato lo schema esistente di `connected_games_db`, applicare
-anche la migrazione principale dalla root del progetto. Sostituisce il
-riferimento numerico a `tbl_user` in `tbl_match_players` con il subject
-Identity Service e uno snapshot del nome:
-
-```powershell
-php yii migrate
-```
-
-La migrazione si interrompe senza modificare la tabella se trova ancora righe
-in `tbl_match_players`.
-
-### Creare gli account
-
-Gli account admin e player sono gestiti esclusivamente da Identity Service. Dalla cartella `services/identity-service` creare un account con:
-
-```powershell
-php yii identity/create-user <username> admin
-php yii identity/create-user <username> player
-```
-
-La migrazione principale converte il roster ai subject ID e rimuove la vecchia tabella `tbl_user`. Prima di applicarla, assicurarsi che gli account necessari siano già presenti in Identity Service: dopo la rimozione, gli account si creano e si amministrano solo tramite quel servizio.
-
-
-## 3. Configurare PhpStorm
-
-Creare tre configurazioni da **Run | Edit Configurations...**. Il login dell'app principale richiede che il servizio identità sia avviato.
-
-### Applicazione principale: PHP Built-in Web Server
-
-| Campo | Valore |
-|---|---|
-| Name | `Connected Games Platform` |
-| Host | `127.0.0.1` |
-| Port | `8080` |
-| Document root | `<percorso-progetto>/web` |
-| Router script | `<percorso-progetto>/web/index.php` |
-| PHP interpreter | PHP 8.2+ con `pdo_mysql` |
-
-In **Environment variables**:
+## Organizzazione del repository
 
 ```text
-IDENTITY_SERVICE_URL=http://127.0.0.1:8001;DARTS_GAME_SERVICE_URL=http://127.0.0.1:8003;DARTS_GAME_MATCHES_TOKEN=<token-partite>;DARTS_GAME_DEVICE_TOKEN=<token-dispositivi>
+config/                         Configurazione dell'applicazione principale
+controllers/                    Console web e API del dispositivo
+models/                         Modelli della piattaforma
+views/                          Pagine della console
+services/                       Client HTTP e integrazioni dell'app principale
+  identity-service/             Microservizio dei profili e verifica token
+  darts-game-service/           Microservizio del gioco freccette
+device-simulator-cli/           Simulatore C++ dei dispositivi
+database/                       Materiale SQL disponibile
+migrations/                     Migrazioni dell'applicazione principale
+tests/                          Suite di test presenti nel progetto
 ```
 
-Generare token propri e usare gli stessi valori per `DARTS_GAME_MATCHES_TOKEN` e `DARTS_GAME_DEVICE_TOKEN` anche nella configurazione del servizio Freccette. Il database principale è configurato in `config/db.php`, non tramite variabili d'ambiente.
+## Installazione e avvio
 
-### Servizio identità: PHP Script
+Per requisiti, database, configurazioni PhpStorm, avvio senza Docker, configurazione Keycloak e risoluzione degli errori, seguire la guida [INSTALLAZIONE COMPLETA](<INSTALLAZIONE COMPLETA.md>).
 
-| Campo | Valore |
-|---|---|
-| Name | `Identity Service` |
-| File | `<percorso-progetto>/services/identity-service/yii` |
-| Working directory | `<percorso-progetto>/services/identity-service` |
-| PHP interpreter | PHP 8.2+ con `pdo_mysql` |
-| Arguments | `serve 127.0.0.1:8001 --docroot=web --router=web/index.php` |
+La configurazione locale descritta usa le porte `8080` per la console, `8001` per identity-service, `8003` per darts-game-service e `8081` per Keycloak.
 
-In **Environment variables**:
+## Ambito didattico
 
-```text
-IDENTITY_DB_HOST=localhost;IDENTITY_DB_PORT=3306;IDENTITY_DB_NAME=connected_games_identity;IDENTITY_DB_USER=root;IDENTITY_DB_PASSWORD=;IDENTITY_COOKIE_KEY=<segreto-casuale-lungo>
-```
-
-`IDENTITY_DB_PASSWORD` è vuota nell'esempio XAMPP; se PhpStorm non accetta un valore vuoto, omettere la variabile. Impostare per `IDENTITY_COOKIE_KEY` un valore casuale di almeno 32 caratteri, non salvarlo nel repository.
-
-### Servizio Freccette: PHP Script
-
-| Campo | Valore |
-|---|---|
-| Name | `Darts Game Service` |
-| File | `<percorso-progetto>/services/darts-game-service/yii` |
-| Working directory | `<percorso-progetto>/services/darts-game-service` |
-| PHP interpreter | PHP 8.2+ con `pdo_mysql` |
-| Arguments | `serve 127.0.0.1:8003 --docroot=web --router=web/index.php` |
-
-In **Environment variables**:
-
-```text
-DARTS_GAME_DB_HOST=localhost;DARTS_GAME_DB_PORT=3306;DARTS_GAME_DB_NAME=connected_games_dartsgame;DARTS_GAME_DB_USER=root;DARTS_GAME_DB_PASSWORD=;DARTS_GAME_MATCHES_TOKEN=<token-partite>;DARTS_GAME_DEVICE_TOKEN=<token-dispositivi>
-```
-
-Avviare MySQL in XAMPP e poi i processi PhpStorm nell'ordine: **Identity Service**, **Darts Game Service**, **Connected Games Platform**. Lasciare attive tutte e tre le configurazioni durante l'uso.
-
-## Note
-
-- Il servizio identità conserva password hashate e salva nei database soltanto hash dei token di accesso. Il token ha durata massima di 8 ore; il logout lo revoca.
-- Non salvare password, token o chiavi reali nei file del repository.
-- Le cartelle `vendor` sono ignorate da Git: dopo un nuovo clone eseguire `composer install` nella root e in entrambe le cartelle `services`.
-- MySQL deve essere avviato da XAMPP; le porte host `8080`, `8001` e `8003` devono essere libere.
+Il progetto si concentra sulla separazione delle responsabilità in servizi, sulla collaborazione tramite API e sull'integrazione con Keycloak. MQTT, Mosquitto, Arduino e un'architettura a eventi non fanno parte del flusso attualmente implementato.
