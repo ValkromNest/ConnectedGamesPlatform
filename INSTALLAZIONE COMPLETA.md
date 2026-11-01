@@ -2,9 +2,89 @@
 
 Questa guida riunisce integralmente il precedente README e la guida di installazione Keycloak, conservando requisiti, comandi, configurazioni e risoluzione dei problemi.
 
+## Database: procedura attuale per una nuova installazione
+
+Questa è la procedura da seguire per creare da zero i tre database e le tabelle. Il comando non deve essere eseguito sull'installazione già popolata.
+
+### 1. Installare le dipendenze e avviare MySQL
+
+Dopo aver scaricato il progetto, eseguire Composer nelle tre applicazioni, dalla root:
+
+```powershell
+composer install
+composer install --working-dir=services/identity-service
+composer install --working-dir=services/darts-game-service
+```
+
+Avviare MySQL dal pannello XAMPP. Non è necessario avviare Keycloak o i server PHP per creare lo schema: il comando Yii funziona dal terminale.
+
+### 2. Configurare le connessioni
+
+| Applicazione | Configurazione | Database predefinito | Script utilizzato |
+| --- | --- | --- | --- |
+| Principale | `config/db.php` | `connected_games_db` | `database/connected_games_db.sql` |
+| Identity-service | `services/identity-service/config/db.php` | `connected_games_identity` | `database/connected_games_identity.sql` |
+| Darts-service | `services/darts-game-service/config/db.php` | `connected_games_dartsgame` | `database/connected_games_dartsgame.sql` |
+
+L'app principale legge host, nome database e credenziali da `config/db.php`. I due microservizi leggono le rispettive variabili d'ambiente, con valori predefiniti per MySQL locale. Per impostarle nel terminale PowerShell:
+
+```powershell
+$env:IDENTITY_DB_HOST = 'localhost'
+$env:IDENTITY_DB_PORT = '3306'
+$env:IDENTITY_DB_NAME = 'connected_games_identity'
+$env:IDENTITY_DB_USER = 'root'
+$env:IDENTITY_DB_PASSWORD = Read-Host 'Password MySQL identity (Invio se vuota)'
+
+$env:DARTS_GAME_DB_HOST = 'localhost'
+$env:DARTS_GAME_DB_PORT = '3306'
+$env:DARTS_GAME_DB_NAME = 'connected_games_dartsgame'
+$env:DARTS_GAME_DB_USER = 'root'
+$env:DARTS_GAME_DB_PASSWORD = Read-Host 'Password MySQL darts (Invio se vuota)'
+```
+
+Usare le credenziali reali del proprio ambiente. Le variabili delle configurazioni Run di PhpStorm non sono automaticamente disponibili nel terminale. Per gli avvii successivi dei servizi, configurarle anche nelle rispettive configurazioni Run.
+
+Le credenziali usate dal comando devono consentire la creazione dei database e delle tabelle. Per l'esecuzione ordinaria si possono poi usare account con privilegi limitati al database di proprietà.
+
+### 3. Eseguire il comando dalla root
+
+```powershell
+php yii database/install
+```
+
+Il comando:
+
+1. Legge e prepara i tre script SQL.
+2. Si collega ai server MySQL configurati senza richiedere che i database esistano già.
+3. Controlla tutti e tre i database prima di qualsiasi scrittura: se uno contiene tabelle o viste, oppure due applicazioni puntano allo stesso database, interrompe l'installazione.
+4. Crea i database mancanti e usa quelli già presenti solo se vuoti.
+5. Crea tabelle InnoDB, indici e relazioni interne ai servizi, con charset utf8mb4.
+6. Inserisce soltanto il gioco Freccette, codice `darts`, nel catalogo principale.
+
+Gli script includono già `keycloak_subject` e `keycloak_issuer`. Non creano utenti, password, dispositivi, partite o dati Keycloak.
+
+### 4. Completare l'installazione
+
+Configurare Keycloak come descritto nella Parte 2, creare i profili locali e associare gli utenti Keycloak. Quindi avviare identity-service, darts-game-service e applicazione principale con le configurazioni PhpStorm.
+
+**Non eseguire anche le migrazioni o l'ALTER TABLE Keycloak descritti nelle sezioni storiche:** lo schema finale è già installato. Il comando non crea lo storico delle migrazioni; eventuali aggiornamenti futuri tramite migrazioni richiederanno una baseline dedicata.
+
+Per l'importazione manuale è possibile creare prima i tre database e importare in ciascuno il relativo file SQL. Anche questa modalità richiede database vuoti e sostituisce, non integra, la creazione tramite comando.
+
+### Errori e installazione esistente
+
+| Situazione | Comportamento / soluzione |
+| --- | --- |
+| Database già popolato, anche soltanto con tabelle vuote | Il comando si ferma prima della creazione: non è uno strumento di aggiornamento. |
+| Accesso MySQL negato | Controllare credenziali, variabili disponibili nel terminale e privilegi di creazione. |
+| MySQL non raggiungibile | Avviare MySQL e verificare host e porta. |
+| Errore durante la creazione delle tabelle | Il DDL MySQL può lasciare uno schema parziale: non esiste rollback automatico. Controllare manualmente prima di riprovare. |
+
+Il comando non elimina né svuota database. Nell'installazione attuale, già popolata, non occorre eseguirlo: basta avviare i servizi. Dettagli aggiuntivi in [database/README.md](database/README.md).
+
 ## Come usare questa guida
 
-1. Preparare PHP, Composer e i tre database seguendo la **Parte 1**.
+1. Preparare PHP e Composer; seguire la sezione **Database: procedura attuale per una nuova installazione** per creare database e tabelle.
 2. Configurare i processi PHP in PhpStorm.
 3. Completare Keycloak, le variabili dei processi PHP e l'associazione dei profili seguendo la **Parte 2**.
 4. Avviare MySQL, Keycloak (8081), identity-service (8001), darts-game-service (8003) e applicazione principale (8080).
@@ -14,7 +94,7 @@ Questa guida riunisce integralmente il precedente README e la guida di installaz
 
 **Migrazioni:** la migrazione dell'identity-service può già includere le colonne Keycloak. Se sono state create tramite `php yii migrate`, non applicare anche l'SQL della Parte 2. Se invece è stato usato l'SQL manuale, non rieseguire la stessa modifica tramite migrazione.
 
-**Schema principale:** prima di una nuova installazione verificare lo schema SQL effettivamente disponibile in `database/` e le migrazioni presenti. Il precedente README segnala che lo schema iniziale va fornito separatamente: non assumere che il solo comando migrate ricostruisca un database principale vuoto.
+**Schema principale:** i tre script in `database/` ora forniscono lo schema finale. L’indicazione del precedente README secondo cui lo schema iniziale va fornito separatamente è storica ed è superata dalla procedura `database/install` descritta sopra.
 
 ---
 
