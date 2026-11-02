@@ -65,7 +65,7 @@ $postButton = static fn (string $label, string $route, string $class): string =>
             </tbody></table></div>
         <?php endif; ?>
         <?php if ($status === MatchStatus::RUNNING && is_array($turn) && isset($turn['playerId'])): ?>
-            <p class="mt-3 mb-0"><strong>Turno:</strong> <?= Html::encode($turn['playerId']) ?> · freccette rimanenti: <?= Html::encode($turn['dartsRemaining'] ?? '—') ?></p>
+            <p class="mt-3 mb-0"><strong>Turno:</strong> <?= Html::encode($playerNames[(string) $turn['playerId']] ?? 'Giocatore sconosciuto') ?> · freccette rimanenti: <?= Html::encode($turn['dartsRemaining'] ?? '—') ?></p>
         <?php endif; ?>
         <?php if ($status === MatchStatus::OPEN && count($model->matchPlayers) < (int) $model->max_players && $availablePlayers !== []): ?>
             <button type="button" class="btn btn-primary btn-sm mt-3" data-bs-toggle="modal" data-bs-target="#add-player-modal">Aggiungi player</button>
