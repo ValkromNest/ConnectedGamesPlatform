@@ -11,10 +11,19 @@ final class IdentityServiceClient
     /** @return array{accessToken: string, tokenType: string, expiresAt: string, user: array{sub: string, username: string, role: string}} */
     public function login(string $username, string $password): array
     {
-        return $this->request('POST', '/api/v1/auth/login', [
+        $response = $this->request('POST', '/api/v1/auth/login', [
             'username' => $username,
             'password' => $password,
         ]);
+        $user = $response['user'] ?? null;
+        if (!is_array($user) || !is_string($user['sub'] ?? null)
+            || !is_string($user['username'] ?? null) || !is_string($user['role'] ?? null)
+            || !is_string($response['accessToken'] ?? null)
+            || !is_string($response['tokenType'] ?? null) || !is_string($response['expiresAt'] ?? null)
+        ) {
+            throw new IdentityServiceException('Identity service returned an invalid login response.', 502);
+        }
+        return $response;
     }
 
     /** @return array{sub: string, username: string, role: string} */

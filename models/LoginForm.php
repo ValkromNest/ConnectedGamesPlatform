@@ -41,13 +41,10 @@ final class LoginForm extends Model
             return;
         }
 
-        $user = $this->authentication['user'] ?? null;
-        $token = $this->authentication['accessToken'] ?? null;
-        if (!is_array($user) || ($user['role'] ?? null) !== 'admin'
-            || !is_string($user['sub'] ?? null) || !is_string($user['username'] ?? null)
-            || !is_string($token) || $token === ''
-        ) {
-            if (is_string($token) && $token !== '') {
+        $user = $this->authentication['user'];
+        $token = $this->authentication['accessToken'];
+        if ($user['role'] !== 'admin' || $token === '') {
+            if ($token !== '') {
                 try {
                     (new IdentityServiceClient())->logout($token);
                 } catch (IdentityServiceException) {

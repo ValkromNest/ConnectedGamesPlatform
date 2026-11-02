@@ -49,7 +49,7 @@ final class AuthenticatedUser implements IdentityInterface
             Yii::$app->session->remove('keycloak_expires_at');
             return null;
         }
-        return hash_equals((string) $id, $profile['sub']) ? new static($profile) : null;
+        return new static($profile);
     }
 
     public static function findIdentityByAccessToken($token, $type = null): ?static

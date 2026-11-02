@@ -153,7 +153,8 @@ class DartsMatch extends GameMatch
 
     public static function findById(int $id): ?self
     {
-        return static::findDarts()->andWhere(['{{%tbl_matches}}.id' => $id])->one();
+        $match = static::findDarts()->andWhere(['{{%tbl_matches}}.id' => $id])->one();
+        return self::requireMatchType($match);
     }
 
     public function saveDetails(): bool
@@ -181,13 +182,22 @@ class DartsMatch extends GameMatch
             ->orderBy(['{{%tbl_matches}}.id' => SORT_DESC])
             ->one();
         if ($active !== null) {
-            return $active;
+            return self::requireMatchType($active);
         }
 
-        return DartsMatch::findDarts()
+        $match = DartsMatch::findDarts()
             ->where(['{{%tbl_matches}}.device_id' => $device->id])
             ->orderBy(['{{%tbl_matches}}.id' => SORT_DESC])
             ->one();
+        return self::requireMatchType($match);
+    }
+
+    private static function requireMatchType(mixed $match): ?self
+    {
+        if ($match !== null && !$match instanceof self) {
+            throw new \UnexpectedValueException('Expected a darts match record.');
+        }
+        return $match;
     }
 
 }

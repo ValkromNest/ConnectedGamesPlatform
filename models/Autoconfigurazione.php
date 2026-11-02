@@ -42,12 +42,12 @@ class Autoconfigurazione extends ActiveRecord
 
     public static function getValueAsString(string $nome, ?string $valoreDefault = null): ?string
     {
-        return static::getOrCreate($nome, $valoreDefault)->valore;
+        return self::getOrCreate($nome, $valoreDefault)->valore;
     }
 
     public static function setValueAsString(string $nome, ?string $valore): void
     {
-        $configurazione = static::getOrCreate($nome, null);
+        $configurazione = self::getOrCreate($nome, null);
         $configurazione->valore = $valore;
 
         if (!$configurazione->save()) {
@@ -61,7 +61,7 @@ class Autoconfigurazione extends ActiveRecord
 
     public static function getValueAsBoolean(string $nome, ?bool $valoreDefault = null): ?bool
     {
-        $value = static::getOrCreate(
+        $value = self::getOrCreate(
             $nome,
             $valoreDefault === null ? null : ($valoreDefault ? '1' : '0'),
         )->valore;
@@ -75,7 +75,7 @@ class Autoconfigurazione extends ActiveRecord
 
     public static function getValueAsInteger(string $nome, ?int $valoreDefault = null): ?int
     {
-        $value = static::getOrCreate(
+        $value = self::getOrCreate(
             $nome,
             $valoreDefault === null ? null : (string) $valoreDefault,
         )->valore;
@@ -89,7 +89,7 @@ class Autoconfigurazione extends ActiveRecord
 
     public static function getValueAsFloat(string $nome, ?float $valoreDefault = null): ?float
     {
-        $value = static::getOrCreate(
+        $value = self::getOrCreate(
             $nome,
             $valoreDefault === null ? null : (string) $valoreDefault,
         )->valore;
@@ -102,7 +102,7 @@ class Autoconfigurazione extends ActiveRecord
      */
     public static function getValueAsArray(string $nome, ?array $valoreDefault = null): ?array
     {
-        $value = static::getOrCreate(
+        $value = self::getOrCreate(
             $nome,
             $valoreDefault === null ? null : json_encode($valoreDefault, JSON_THROW_ON_ERROR),
         )->valore;
@@ -122,7 +122,7 @@ class Autoconfigurazione extends ActiveRecord
 
     private static function getOrCreate(string $nome, ?string $valoreDefault): static
     {
-        $nome = static::normaliseName($nome);
+        $nome = self::normaliseName($nome);
 
         $configurazione = static::findOne(['nome' => $nome]);
         if ($configurazione !== null) {
