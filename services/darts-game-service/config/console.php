@@ -5,6 +5,7 @@ Yii::setAlias('@darts', dirname(__DIR__));
 return [
     'id' => 'darts-game-service-console',
     'basePath' => dirname(__DIR__),
+    'timeZone' => 'Europe/Rome',
     'controllerNamespace' => 'darts\commands',
     'components' => [
         'db' => require __DIR__ . '/db.php',

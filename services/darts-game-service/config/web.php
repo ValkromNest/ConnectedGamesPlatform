@@ -3,6 +3,7 @@
 return [
     'id' => 'darts-game-service',
     'basePath' => dirname(__DIR__),
+    'timeZone' => 'Europe/Rome',
     'bootstrap' => ['log'],
     'controllerNamespace' => 'darts\controllers',
     'components' => [

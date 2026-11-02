@@ -85,4 +85,15 @@ class GameMatch extends ActiveRecord
         $this->refresh();
         return true;
     }
+
+    /** @return MatchPlayer[] */
+    public function getOrderedPlayers(): array
+    {
+        return $this->getMatchPlayers()->orderBy(['turn_order' => SORT_ASC, 'id' => SORT_ASC])->all();
+    }
+
+    public function reloadState(): bool
+    {
+        return $this->refresh();
+    }
 }

@@ -7,7 +7,6 @@ namespace app\controllers;
 use app\models\Device;
 use app\models\Game;
 use Yii;
-use yii\data\ActiveDataProvider;
 use yii\filters\VerbFilter;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
@@ -27,10 +26,7 @@ final class DeviceController extends AdminController
 
     public function actionIndex(): string
     {
-        $dataProvider = new ActiveDataProvider([
-            'query' => Device::find()->with('game')->orderBy(['name' => SORT_ASC]),
-            'pagination' => ['pageSize' => 20],
-        ]);
+        $dataProvider = Device::listDataProvider();
 
         return $this->render('index', compact('dataProvider'));
     }
@@ -47,14 +43,14 @@ final class DeviceController extends AdminController
                 Yii::$app->security->encryptByKey($token, Yii::$app->request->cookieValidationKey),
             );
 
-            if ($model->save()) {
+            if ($model->saveDetails()) {
                 Yii::$app->session->setFlash('success', 'Dispositivo creato.');
 
                 return $this->redirect(['index']);
             }
         }
 
-        $games = $this->gameOptions();
+        $games = Game::options();
 
         return $this->render('create', compact('model', 'games'));
     }
@@ -69,7 +65,7 @@ final class DeviceController extends AdminController
             // Il token è immutabile dalla schermata di aggiornamento.
             $model->token_hash = $tokenHash;
             $model->token_encrypted = $tokenEncrypted;
-            if ($model->save()) {
+            if ($model->saveDetails()) {
                 Yii::$app->session->setFlash('success', 'Dispositivo aggiornato.');
 
                 return $this->redirect(['index']);
@@ -78,7 +74,7 @@ final class DeviceController extends AdminController
 
         $model->token_hash = $tokenHash;
         $model->token_encrypted = $tokenEncrypted;
-        $games = $this->gameOptions();
+        $games = Game::options();
 
         return $this->render('update', compact('model', 'games'));
     }
@@ -115,7 +111,7 @@ final class DeviceController extends AdminController
 
     private function findModel(int $id): Device
     {
-        $model = Device::findOne($id);
+        $model = Device::findById($id);
         if ($model === null) {
             throw new NotFoundHttpException('Dispositivo non trovato.');
         }
@@ -123,14 +119,4 @@ final class DeviceController extends AdminController
         return $model;
     }
 
-    /** @return array<int, string> */
-    private function gameOptions(): array
-    {
-        $options = [];
-        foreach (Game::find()->orderBy(['name' => SORT_ASC])->all() as $game) {
-            $options[(int) $game->id] = $game->name . ' (' . $game->code . ')';
-        }
-
-        return $options;
-    }
 }
