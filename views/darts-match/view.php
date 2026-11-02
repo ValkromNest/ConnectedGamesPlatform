@@ -57,7 +57,7 @@ $postButton = static fn (string $label, string $route, string $class): string =>
         ['attribute' => 'ended_at', 'label' => 'Terminata il', 'format' => ['datetime', 'php:d/m/Y H:i']],
     ], 'options' => ['class' => 'table table-bordered detail-view bg-body mb-5']]) ?>
 
-    <div class="card shadow-sm mb-4"><div class="card-body">
+    <div id="match-participants" class="card shadow-sm mb-4"><div class="card-body">
         <h2 class="h5 mb-3">Partecipanti</h2>
         <?php if ($players === []): ?><p class="text-body-secondary mb-0"><?= in_array((int) $model->status, [MatchStatus::RUNNING->value, MatchStatus::FINISHED->value], true) ? 'Stato del gioco non disponibile dal servizio.' : 'Nessun partecipante registrato.' ?></p><?php else: ?>
             <div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr><th>Ordine</th><th>Giocatore</th><th>Punti rimanenti</th><?php if ($status === MatchStatus::OPEN): ?><th></th><?php endif; ?></tr></thead><tbody>
@@ -84,25 +84,29 @@ $postButton = static fn (string $label, string $route, string $class): string =>
         <?php endif; ?>
     </div></div>
 
+    <div id="match-throws">
     <?php if (in_array((int) $model->status, [MatchStatus::RUNNING->value, MatchStatus::FINISHED->value], true)): ?>
         <div class="card shadow-sm">
             <div class="card-body">
-                <h2 class="h5 mb-3">Tiri effettuati</h2>
+                                <div class="d-flex justify-content-between align-items-center gap-3 mb-3">
+                    <h2 class="h5 mb-0">Tiri effettuati</h2>
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="match-throws-toggle" aria-expanded="false" aria-controls="match-throws-table">mostra tutti</button>
+                </div>
                 <?php if ($throws === []): ?>
                     <p class="text-body-secondary mb-0">Non sono ancora stati registrati tiri.</p>
                 <?php else: ?>
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
+                        <table id="match-throws-table" class="table table-hover align-middle mb-0">
                             <thead><tr><th>#</th><th>Giocatore</th><th>Settore</th><th>Moltiplicatore</th><th>Punti</th><th>Esito</th><th>Registrato il</th></tr></thead>
                             <tbody>
-                            <?php foreach ($throws as $index => $throw): ?>
+                            <?php $visibleThrowCount = 0; foreach (array_reverse($throws, true) as $index => $throw): ?>
                                 <?php
                                 $sector = (int) ($throw['sector'] ?? 0);
                                 $multiplier = (int) ($throw['multiplier'] ?? 1);
                                 $resultLabels = ['scored' => 'Valido', 'missed' => 'Mancato', 'bust' => 'Bust', 'checkout' => 'Vittoria'];
                                 $result = (string) ($throw['result'] ?? '');
                                 ?>
-                                <tr>
+                                <tr data-match-throw<?= $visibleThrowCount++ >= 6 ? ' hidden' : '' ?>>
                                     <td><?= $index + 1 ?></td>
                                     <td><?= Html::encode($playerNames[(string) ($throw['playerId'] ?? '')] ?? ('Player ' . ($throw['playerId'] ?? ''))) ?></td>
                                     <td><?= $sector === 0 ? 'Mancato' : ($sector === 25 ? 'Bull' : $sector) ?></td>
@@ -120,4 +124,56 @@ $postButton = static fn (string $label, string $route, string $class): string =>
         </div>
     <?php endif; ?>
 
+    </div>
 </section>
+
+<?php
+$this->registerJs(<<<'JS'
+(() => {
+    const url = window.location.href;
+    const selectors = ['#match-participants', '#match-throws'];
+    let showAllThrows = false;
+    function updateThrowsVisibility() {
+        document.querySelectorAll('#match-throws [data-match-throw]').forEach((row, index) => {
+            row.hidden = !showAllThrows && index >= 6;
+        });
+        const button = document.querySelector('#match-throws-toggle');
+        if (button) {
+            button.textContent = showAllThrows ? 'mostra ultimi' : 'mostra tutti';
+            button.setAttribute('aria-expanded', String(showAllThrows));
+        }
+    }
+    document.addEventListener('click', event => {
+        if (!event.target.closest('#match-throws-toggle')) return;
+        showAllThrows = !showAllThrows;
+        updateThrowsVisibility();
+    });
+    updateThrowsVisibility();
+    const isEditing = () => document.querySelector('#add-player-modal.show, #add-player-modal.showing') !== null;
+    async function refresh() {
+        try {
+            if (document.hidden || isEditing()) return;
+            const response = await fetch(url, {
+                credentials: 'same-origin',
+                cache: 'no-store',
+                signal: AbortSignal.timeout(10000),
+            });
+            if (!response.ok || response.redirected) return;
+            const page = new DOMParser().parseFromString(await response.text(), 'text/html');
+            if (document.hidden || isEditing()) return;
+            const updates = selectors.map(selector => [document.querySelector(selector), page.querySelector(selector)]);
+            if (updates.some(([current, next]) => !current || !next)) return;
+            updates.forEach(([current, next]) => {
+                if (current.innerHTML !== next.innerHTML) current.innerHTML = next.innerHTML;
+            });
+            updateThrowsVisibility();
+        } catch (error) {
+            // Keep the displayed data on transient failures and retry next time.
+        } finally {
+            window.setTimeout(refresh, 3000);
+        }
+    }
+    window.setTimeout(refresh, 3000);
+})();
+JS);
+?>
