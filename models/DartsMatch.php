@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace app\models;
 
 use yii\data\ActiveDataProvider;
+use app\enums\MatchStatus;
+use DomainException;
 use yii\db\ActiveQuery;
 
 /**
@@ -104,4 +106,88 @@ class DartsMatch extends GameMatch
 
         return $dataProvider;
     }
+
+    public function assertCanAddPlayer(): void
+    {
+        if ($this->status !== MatchStatus::OPEN->value) {
+            throw new DomainException('I partecipanti si possono modificare solo prima dell’avvio.');
+        }
+        if ((int) $this->getMatchPlayers()->count() >= (int) $this->max_players) {
+            throw new DomainException('La partita ha già raggiunto il numero massimo di partecipanti.');
+        }
+    }
+
+    public function addPlayer(string $subjectId, string $displayName): void
+    {
+        $this->assertCanAddPlayer();
+        $participant = new MatchPlayer([
+            'match_id' => $this->id,
+            'identity_subject_id' => $subjectId,
+            'display_name' => $displayName,
+            'score' => 501,
+            'turn_order' => (int) MatchPlayer::find()->where(['match_id' => $this->id])->count() + 1,
+        ]);
+        if (!$participant->save()) {
+            throw new DomainException('Impossibile aggiungere il player alla partita.');
+        }
+    }
+
+    public function removePlayer(string $subjectId): void
+    {
+        if ($this->status !== MatchStatus::OPEN->value) {
+            throw new DomainException('È possibile rimuovere player solo da una partita aperta.');
+        }
+        $participant = MatchPlayer::findOne(['match_id' => $this->id, 'identity_subject_id' => $subjectId]);
+        if ($participant === null) {
+            throw new DomainException('Player non trovato tra i partecipanti.');
+        }
+        static::getDb()->transaction(function () use ($participant): void {
+            if ($participant->delete() === false) {
+                throw new DomainException('Impossibile rimuovere il player.');
+            }
+            foreach ($this->getOrderedPlayers() as $index => $player) {
+                $player->updateAttributes(['turn_order' => $index + 1]);
+            }
+        });
+    }
+
+    public static function findById(int $id): ?self
+    {
+        return static::findDarts()->andWhere(['{{%tbl_matches}}.id' => $id])->one();
+    }
+
+    public function saveDetails(): bool
+    {
+        return $this->save();
+    }
+
+    public static function findRecent(int $limit = 8, bool $activeOnly = false): array
+    {
+        $query = static::findDarts();
+        if ($activeOnly) {
+            $query->andWhere(['{{%tbl_matches}}.status' => [MatchStatus::CREATED->value, MatchStatus::OPEN->value, MatchStatus::RUNNING->value]]);
+        }
+        return $query->orderBy(['{{%tbl_matches}}.created_at' => SORT_DESC, '{{%tbl_matches}}.id' => SORT_DESC])->limit($limit)->all();
+    }
+    public static function findAssignedToDevice(Device $device): ?DartsMatch
+    {
+        $active = DartsMatch::findDarts()
+            ->where(['{{%tbl_matches}}.device_id' => $device->id])
+            ->andWhere(['{{%tbl_matches}}.status' => [
+                MatchStatus::CREATED->value,
+                MatchStatus::OPEN->value,
+                MatchStatus::RUNNING->value,
+            ]])
+            ->orderBy(['{{%tbl_matches}}.id' => SORT_DESC])
+            ->one();
+        if ($active !== null) {
+            return $active;
+        }
+
+        return DartsMatch::findDarts()
+            ->where(['{{%tbl_matches}}.device_id' => $device->id])
+            ->orderBy(['{{%tbl_matches}}.id' => SORT_DESC])
+            ->one();
+    }
+
 }

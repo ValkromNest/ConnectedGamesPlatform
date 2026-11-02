@@ -55,4 +55,58 @@ class Device extends ActiveRecord
             'is_enabled' => true,
         ])->one();
     }
+    /** @return array<int, string> */
+    public static function availableForGame(int $gameId, ?int $currentDeviceId = null): array
+    {
+        $query = Device::find()
+            ->select('name')
+            ->where(['game_id' => $gameId]);
+
+        if ($currentDeviceId === null) {
+            $query->andWhere(['is_enabled' => true]);
+        } else {
+            $query->andWhere(['or', ['is_enabled' => true], ['id' => $currentDeviceId]]);
+        }
+
+        return $query->indexBy('id')->column();
+    }
+
+    public static function findEnabledDarts(): array
+    {
+        return static::find()
+            ->joinWith('game')
+            ->where(['{{%tbl_device}}.is_enabled' => true, '{{%tbl_game}}.code' => DartsMatch::GAME_CODE])
+            ->orderBy(['{{%tbl_device}}.name' => SORT_ASC])
+            ->all();
+    }
+
+    public static function findEnabledDartsById(int $id): ?self
+    {
+        return static::find()
+            ->joinWith('game')
+            ->where([
+                '{{%tbl_device}}.id' => $id,
+                '{{%tbl_device}}.is_enabled' => true,
+                '{{%tbl_game}}.code' => DartsMatch::GAME_CODE,
+            ])
+            ->one();
+    }
+
+    public static function listDataProvider(): \yii\data\ActiveDataProvider
+    {
+        return new \yii\data\ActiveDataProvider([
+            'query' => Device::find()->with('game')->orderBy(['name' => SORT_ASC]),
+            'pagination' => ['pageSize' => 20],
+        ]);
+    }
+
+    public static function findById(int $id): ?self
+    {
+        return static::findOne($id);
+    }
+
+    public function saveDetails(): bool
+    {
+        return $this->save();
+    }
 }

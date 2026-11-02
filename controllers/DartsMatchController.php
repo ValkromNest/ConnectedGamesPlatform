@@ -51,14 +51,14 @@ final class DartsMatchController extends AdminController
             $model->game_id = $dartsGame->id;
             $model->status = MatchStatus::CREATED->value;
 
-            if ($model->save()) {
+            if ($model->saveDetails()) {
                 Yii::$app->session->setFlash('success', 'Partita di freccette creata.');
 
                 return $this->redirect(['index']);
             }
         }
 
-        $devices = $this->availableDevices((int) $dartsGame->id);
+        $devices = Device::availableForGame((int) $dartsGame->id);
 
         return $this->render('create', compact('model', 'devices'));
     }
@@ -78,14 +78,14 @@ final class DartsMatchController extends AdminController
             $model->game_id = $gameId;
             $model->status = $status;
 
-            if ($model->save()) {
+            if ($model->saveDetails()) {
                 Yii::$app->session->setFlash('success', 'Partita di freccette aggiornata.');
 
                 return $this->redirect(['index']);
             }
         }
 
-        $devices = $this->availableDevices((int) $model->game_id, $model->device_id === null ? null : (int) $model->device_id);
+        $devices = Device::availableForGame((int) $model->game_id, $model->device_id === null ? null : (int) $model->device_id);
 
         return $this->render('update', compact('model', 'devices'));
     }
@@ -93,7 +93,7 @@ final class DartsMatchController extends AdminController
     public function actionView(int $id): string
     {
         $model = $this->findDartsMatch($id);
-        $model->populateRelation('matchPlayers', $model->getMatchPlayers()->orderBy(['turn_order' => SORT_ASC, 'id' => SORT_ASC])->all());
+        $model->populateRelation('matchPlayers', $model->getOrderedPlayers());
         $availablePlayers = [];
         if ($model->status === MatchStatus::OPEN->value) {
             try {
@@ -128,12 +128,7 @@ final class DartsMatchController extends AdminController
     {
         $model = $this->findDartsMatch($id);
         try {
-            if ($model->status !== MatchStatus::OPEN->value) {
-                throw new DomainException('I partecipanti si possono modificare solo prima dell’avvio.');
-            }
-            if ((int) MatchPlayer::find()->where(['match_id' => $id])->count() >= (int) $model->max_players) {
-                throw new DomainException('La partita ha già raggiunto il numero massimo di partecipanti.');
-            }
+            $model->assertCanAddPlayer();
             $subjectId = trim((string) $this->request->post('player_subject_id', ''));
             $user = null;
             foreach ($this->identityService()->players($this->identityAccessToken()) as $candidate) {
@@ -145,16 +140,7 @@ final class DartsMatchController extends AdminController
             if ($user === null) {
                 throw new DomainException('Seleziona un player valido.');
             }
-            $participant = new MatchPlayer([
-                'match_id' => $id,
-                'identity_subject_id' => $user['sub'],
-                'display_name' => $user['username'],
-                'score' => 501,
-                'turn_order' => (int) MatchPlayer::find()->where(['match_id' => $id])->count() + 1,
-            ]);
-            if (!$participant->save()) {
-                throw new DomainException('Impossibile aggiungere il player alla partita.');
-            }
+            $model->addPlayer($user['sub'], $user['username']);
             Yii::$app->session->setFlash('success', 'Player aggiunto alla partita.');
         } catch (DomainException $exception) {
             Yii::$app->session->setFlash('error', $exception->getMessage());
@@ -169,25 +155,11 @@ final class DartsMatchController extends AdminController
     public function actionRemovePlayer(int $id, string $playerSubjectId): Response
     {
         $model = $this->findDartsMatch($id);
-        if ($model->status !== MatchStatus::OPEN->value) {
-            Yii::$app->session->setFlash('error', 'È possibile rimuovere player solo da una partita aperta.');
-            return $this->redirect(['view', 'id' => $id]);
-        }
-
-        $participant = MatchPlayer::findOne(['match_id' => $id, 'identity_subject_id' => $playerSubjectId]);
-        if ($participant === null) {
-            Yii::$app->session->setFlash('error', 'Player non trovato tra i partecipanti.');
-            return $this->redirect(['view', 'id' => $id]);
-        }
-
-        if ($participant->delete() !== false) {
-            $remaining = MatchPlayer::find()->where(['match_id' => $id])->orderBy(['turn_order' => SORT_ASC, 'id' => SORT_ASC])->all();
-            foreach ($remaining as $index => $player) {
-                $player->updateAttributes(['turn_order' => $index + 1]);
-            }
+        try {
+            $model->removePlayer($playerSubjectId);
             Yii::$app->session->setFlash('success', 'Player rimosso dalla partita.');
-        } else {
-            Yii::$app->session->setFlash('error', 'Impossibile rimuovere il player.');
+        } catch (DomainException $exception) {
+            Yii::$app->session->setFlash('error', $exception->getMessage());
         }
 
         return $this->redirect(['view', 'id' => $id]);
@@ -206,10 +178,7 @@ final class DartsMatchController extends AdminController
             return $this->redirect(['view', 'id' => $id]);
         }
 
-        $players = MatchPlayer::find()
-            ->where(['match_id' => $id])
-            ->orderBy(['turn_order' => SORT_ASC, 'id' => SORT_ASC])
-            ->all();
+        $players = $model->getOrderedPlayers();
         $contextPlayers = array_map(static fn (MatchPlayer $player): array => [
             'playerId' => (string) $player->identity_subject_id,
             'displayName' => (string) $player->display_name,
@@ -281,9 +250,7 @@ final class DartsMatchController extends AdminController
 
     private function findDartsMatch(int $id): DartsMatch
     {
-        $model = DartsMatch::findDarts()
-            ->andWhere(['{{%tbl_matches}}.id' => $id])
-            ->one();
+        $model = DartsMatch::findById($id);
 
         if (!$model instanceof DartsMatch) {
             throw new NotFoundHttpException('Partita di freccette non trovata.');
@@ -321,19 +288,4 @@ final class DartsMatchController extends AdminController
         );
     }
 
-    /** @return array<int, string> */
-    private function availableDevices(int $gameId, ?int $currentDeviceId = null): array
-    {
-        $query = Device::find()
-            ->select('name')
-            ->where(['game_id' => $gameId]);
-
-        if ($currentDeviceId === null) {
-            $query->andWhere(['is_enabled' => true]);
-        } else {
-            $query->andWhere(['or', ['is_enabled' => true], ['id' => $currentDeviceId]]);
-        }
-
-        return $query->indexBy('id')->column();
-    }
 }

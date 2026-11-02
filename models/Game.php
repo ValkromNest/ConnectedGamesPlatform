@@ -38,4 +38,19 @@ class Game extends ActiveRecord
     {
         return $this->hasMany(Device::class, ['game_id' => 'id']);
     }
+
+    public static function findEnabled(): array
+    {
+        return static::find()->where(['enabled' => true])->orderBy(['name' => SORT_ASC])->all();
+    }
+    /** @return array<int, string> */
+    public static function options(): array
+    {
+        $options = [];
+        foreach (Game::find()->orderBy(['name' => SORT_ASC])->all() as $game) {
+            $options[(int) $game->id] = $game->name . ' (' . $game->code . ')';
+        }
+
+        return $options;
+    }
 }

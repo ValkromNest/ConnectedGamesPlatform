@@ -40,11 +40,7 @@ final class DartsApiController extends Controller
     public function actionDevices(): array
     {
         Yii::$app->response->format = Response::FORMAT_JSON;
-        $devices = Device::find()
-            ->joinWith('game')
-            ->where(['{{%tbl_device}}.is_enabled' => true, '{{%tbl_game}}.code' => DartsMatch::GAME_CODE])
-            ->orderBy(['{{%tbl_device}}.name' => SORT_ASC])
-            ->all();
+        $devices = Device::findEnabledDarts();
 
         return ['devices' => array_map(static fn (Device $device): array => [
             'id' => (int) $device->id,
@@ -63,14 +59,7 @@ final class DartsApiController extends Controller
             return $this->error(400, 'Il JSON deve contenere device_id intero.');
         }
 
-        $device = Device::find()
-            ->joinWith('game')
-            ->where([
-                '{{%tbl_device}}.id' => (int) $payload['device_id'],
-                '{{%tbl_device}}.is_enabled' => true,
-                '{{%tbl_game}}.code' => DartsMatch::GAME_CODE,
-            ])
-            ->one();
+        $device = Device::findEnabledDartsById((int) $payload['device_id']);
         if ($device === null) {
             return $this->error(404, 'Dispositivo Freccette non trovato o disabilitato.');
         }
@@ -96,7 +85,7 @@ final class DartsApiController extends Controller
             return $this->error(401, 'Token dispositivo mancante o non valido.');
         }
 
-        $match = $this->assignedMatch($device);
+        $match = DartsMatch::findAssignedToDevice($device);
         if ($match === null) {
             return $this->error(404, 'Nessuna partita assegnata a questo dispositivo.');
         }
@@ -120,7 +109,7 @@ final class DartsApiController extends Controller
             return $this->error(401, 'Token dispositivo mancante o non valido.');
         }
 
-        $match = $this->assignedMatch($device);
+        $match = DartsMatch::findAssignedToDevice($device);
         if ($match === null) {
             return $this->error(404, 'Nessuna partita assegnata a questo dispositivo.');
         }
@@ -150,7 +139,7 @@ final class DartsApiController extends Controller
             if (($result['result'] ?? null) === 'checkout' && $match->status === MatchStatus::RUNNING->value) {
                 $match->transitionTo(MatchStatus::FINISHED);
             }
-            $match->refresh();
+            $match->reloadState();
             return [
                 'throw' => [
                     'id' => (int) ($result['throwId'] ?? 0),
@@ -200,27 +189,6 @@ final class DartsApiController extends Controller
         return is_string($token) ? $token : null;
     }
 
-    private function assignedMatch(Device $device): ?DartsMatch
-    {
-        $active = DartsMatch::findDarts()
-            ->where(['{{%tbl_matches}}.device_id' => $device->id])
-            ->andWhere(['{{%tbl_matches}}.status' => [
-                MatchStatus::CREATED->value,
-                MatchStatus::OPEN->value,
-                MatchStatus::RUNNING->value,
-            ]])
-            ->orderBy(['{{%tbl_matches}}.id' => SORT_DESC])
-            ->one();
-        if ($active !== null) {
-            return $active;
-        }
-
-        return DartsMatch::findDarts()
-            ->where(['{{%tbl_matches}}.device_id' => $device->id])
-            ->orderBy(['{{%tbl_matches}}.id' => SORT_DESC])
-            ->one();
-    }
-
     /** @return array<string, mixed> */
     private function matchState(DartsMatch $match): array
     {
@@ -228,10 +196,7 @@ final class DartsApiController extends Controller
             return $this->adaptGameState($match, (new DartsGameServiceClient())->state((int) $match->id));
         }
 
-        $players = MatchPlayer::find()
-            ->where(['match_id' => $match->id])
-            ->orderBy(['turn_order' => SORT_ASC, 'id' => SORT_ASC])
-            ->all();
+        $players = $match->getOrderedPlayers();
         return [
             'match' => [
                 'id' => (int) $match->id,
