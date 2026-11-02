@@ -19,6 +19,7 @@ use app\enums\MatchStatus;
  * @property int|null $device_id
  * @property string|null $created_at
  * @property string|null $started_at
+ * @property-read MatchPlayer[] $matchPlayers
  * @property string|null $ended_at
  */
 class GameMatch extends ActiveRecord
@@ -89,7 +90,13 @@ class GameMatch extends ActiveRecord
     /** @return MatchPlayer[] */
     public function getOrderedPlayers(): array
     {
-        return $this->getMatchPlayers()->orderBy(['turn_order' => SORT_ASC, 'id' => SORT_ASC])->all();
+        $players = $this->getMatchPlayers()->orderBy(['turn_order' => SORT_ASC, 'id' => SORT_ASC])->all();
+        return array_map(static function ($player): MatchPlayer {
+            if (!$player instanceof MatchPlayer) {
+                throw new \UnexpectedValueException('Expected a match player record.');
+            }
+            return $player;
+        }, $players);
     }
 
     public function reloadState(): bool

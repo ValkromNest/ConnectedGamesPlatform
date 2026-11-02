@@ -15,6 +15,7 @@ use yii\db\ActiveRecord;
  * @property int $game_id
  * @property string $token_hash
  * @property string|null $token_encrypted
+ * @property-read Game|null $game
  * @property bool $is_enabled
  */
 class Device extends ActiveRecord

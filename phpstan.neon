@@ -15,6 +15,7 @@ parameters:
 
     scanDirectories:
         - tests/Support
+        - services
 
     bootstrapFiles:
         - tests/_bootstrap.php
