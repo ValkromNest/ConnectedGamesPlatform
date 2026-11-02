@@ -23,36 +23,21 @@ $labelOptions = ['class' => 'form-label fw-semibold small'];
 
             <!-- Brand panel -->
             <div class="col-md-5 d-none d-md-flex login-brand-panel text-white">
-                <div class="d-flex flex-column justify-content-between p-4 p-lg-5 w-100">
-                    <div>
-                        <?= Html::img(
-                            Yii::getAlias('@web/images/yii3_full_white_for_dark.svg'),
-                            [
-                                'alt' => 'Connected Games Platform',
-                                'class' => 'mb-4',
-                                'height' => 40,
-                            ],
-                        ) ?>
-                    </div>
-                    <div>
-                        <h2 class="fw-bold mb-3 login-brand-title">
-                            Connected<br>Games
-                        </h2>
-                        <p class="opacity-75 mb-0 login-brand-text">
-                            Area riservata per la gestione delle partite di Freccette.
-                        </p>
-                    </div>
+                <div class="d-flex flex-column justify-content-center text-start p-4 p-lg-5 w-100">
+                    <h2 class="fw-bold mb-0 login-brand-title">
+                        Connected<br>Games<br>Platform
+                    </h2>
                 </div>
             </div>
 
             <!-- Form panel -->
-            <div class="col-md-7">
+            <div class="col-md-7 login-form-panel d-flex flex-column justify-content-center">
                 <div class="p-4 p-lg-5">
                     <div class="text-center mb-4">
                         <!-- Mobile-only logo -->
                         <div class="d-md-none mb-3">
                             <?= Html::img(
-                                Yii::getAlias('@web/images/yii3_full_black_for_light.svg'),
+                                Yii::getAlias('@web/images/cgp_logo.png'),
                                 [
                                 'alt' => 'Connected Games Platform',
                                     'class' => 'login-mobile-logo',
@@ -60,17 +45,13 @@ $labelOptions = ['class' => 'form-label fw-semibold small'];
                                 ],
                             ) ?>
                         </div>
-                        <h1 class="h3 fw-bold mb-1"><?= Html::encode($this->title) ?></h1>
+                        <h1 class="h3 fw-bold mb-1">Accesso Amministrativo</h1>
                         <p class="text-body-secondary small">Accedi con le credenziali di amministratore</p>
                     </div>
 
                     <div class="d-grid">
-                        <?= Html::a('Accedi', ['/login/authorize'], ['class' => 'btn login-btn btn-lg rounded-3 text-white']) ?>
+                        <?= Html::a('Accedi', ['/login/authorize'], ['class' => 'btn login-btn btn-lg rounded-3']) ?>
                     </div>
-
-                    <p class="text-body-secondary text-center mt-3 mb-0 small">
-                        Accesso riservato agli amministratori della piattaforma.
-                    </p>
 
                 </div>
             </div>

@@ -9,9 +9,6 @@ use yii\db\ActiveQuery;
 
 /**
  * Specializzazione di partita per il gioco Freccette.
- *
- * Qui confluiranno configurazione e regole specifiche del gioco, oltre alle
- * query usate dall'area amministrativa.
  */
 class DartsMatch extends GameMatch
 {
@@ -70,7 +67,6 @@ class DartsMatch extends GameMatch
 
     /**
      * Crea il provider per l'elenco amministrativo delle partite di freccette.
-     * I filtri possono essere ampliati senza coinvolgere il controller.
      *
      * @param array<string, mixed> $params
      */
