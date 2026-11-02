@@ -30,13 +30,11 @@ final class DatabaseController extends Controller
         $targets = [];
 
         try {
-            // Tutti gli schemi sono controllati prima della prima scrittura.
             foreach ($definitions as $label => [$configuration, $filename]) {
                 $sql = file_get_contents($root . '/database/' . $filename);
                 if ($sql === false) {
                     throw new RuntimeException('File SQL non leggibile: ' . $filename);
                 }
-                // I file distribuiti contengono SQL semplice, senza routine o delimitatori personalizzati.
                 $sql = preg_replace('/^\s*--[^\r\n]*/m', '', $sql);
                 $statements = array_values(array_filter(array_map('trim', explode(';', $sql))));
                 if ($statements === []) {
@@ -53,7 +51,6 @@ final class DatabaseController extends Controller
                     throw new RuntimeException($label . ': configurare un dbname valido nella connessione MySQL.');
                 }
                 $database = $matches[1];
-                // Connessione al server senza selezionare un database che potrebbe non esistere.
                 $dsnParts = array_filter(
                     explode(';', substr($db->dsn, 6)),
                     static fn (string $part): bool => $part !== '' && stripos($part, 'dbname=') !== 0,
@@ -85,7 +82,6 @@ final class DatabaseController extends Controller
                     . ' CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci',
                 )->execute();
                 $plan['db']->createCommand('USE ' . $quotedDatabase)->execute();
-                // Ricontrolla prima delle tabelle, nel caso lo schema sia cambiato nel frattempo.
                 $count = (int) $plan['db']->createCommand(
                     'SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = :schema',
                     [':schema' => $plan['database']],

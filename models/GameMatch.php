@@ -9,7 +9,7 @@ use yii\db\ActiveRecord;
 use app\enums\MatchStatus;
 
 /**
- * Partita persistita; "match" è una parola riservata in PHP 8.
+ * Partita persistita.
  *
  * @property int $id
  * @property int $game_id
