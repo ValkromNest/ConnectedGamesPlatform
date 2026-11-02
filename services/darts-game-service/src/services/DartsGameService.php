@@ -48,7 +48,7 @@ final class DartsGameService
                 'starting_score' => DartsThrowCalculator::STARTING_SCORE,
                 'context_hash' => $contextHash,
                 'context_request_key' => $idempotencyKey,
-                'created_at' => gmdate('Y-m-d H:i:s'),
+                'created_at' => date('Y-m-d H:i:s'),
             ]);
             if (!$match->save()) {
                 throw new DomainException('Could not initialize game match.');
@@ -127,7 +127,7 @@ final class DartsGameService
         }
         if ($match->status === 'RUNNING') {
             $match->status = 'FINISHED';
-            $match->finished_at = gmdate('Y-m-d H:i:s');
+            $match->finished_at = date('Y-m-d H:i:s');
             if (!$match->save(false, ['status', 'finished_at'])) {
                 throw new DomainException('Could not finish game match.');
             }
@@ -209,7 +209,7 @@ final class DartsGameService
                 'result' => $result,
                 'idempotency_key' => $idempotencyKey,
                 'request_hash' => $requestHash,
-                'created_at' => gmdate('Y-m-d H:i:s'),
+                'created_at' => date('Y-m-d H:i:s'),
             ]);
             if (!$throw->save()) {
                 throw new DomainException('Could not persist dart throw.');
@@ -221,7 +221,7 @@ final class DartsGameService
             }
             if ($isCheckout) {
                 $match->status = 'FINISHED';
-                $match->finished_at = gmdate('Y-m-d H:i:s');
+                $match->finished_at = date('Y-m-d H:i:s');
                 if (!$match->save(false, ['status', 'finished_at'])) {
                     throw new DomainException('Could not finish game match.');
                 }

@@ -7,6 +7,7 @@ $config = [
     'id' => 'basic',
     'name' => 'Connected Games Platform - Simone Cagliano',
     'basePath' => dirname(__DIR__),
+    'timeZone' => 'Europe/Rome',
     'bootstrap' => ['log'],
     'container' => [
         'singletons' => [
@@ -23,6 +24,10 @@ $config = [
         '@npm'   => '@vendor/npm-asset',
     ],
     'components' => [
+        'formatter' => [
+            'defaultTimeZone' => 'Europe/Rome',
+            'timeZone' => 'Europe/Rome',
+        ],
         'request' => [
             // !!! insert a secret key in the following (if it is empty) - this is required by cookie validation
             'cookieValidationKey' => 'pG8tGXeO-LjzMgYeL4pJVXIPVBzDTFTP',

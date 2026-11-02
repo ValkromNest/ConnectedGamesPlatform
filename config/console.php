@@ -7,6 +7,7 @@ $config = [
     'id' => 'basic-console',
     'name' => 'Connected Games Platform - Simone Cagliano',
     'basePath' => dirname(__DIR__),
+    'timeZone' => 'Europe/Rome',
     'bootstrap' => ['log'],
     'controllerNamespace' => 'app\commands',
     'aliases' => [
