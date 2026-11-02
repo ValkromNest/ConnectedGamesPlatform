@@ -31,6 +31,6 @@ Il subject_id applicativo rimane invariato. Non si associano account automaticam
 
 ## Funzionamento e verifica
 
-Authorization Code con PKCE S256 e state monouso con durata di dieci minuti; token e refresh token nella sessione PHP. Il backend identity verifica l'access token tramite introspezione autenticata Keycloak, controllando active, issuer, audience e scadenza, quindi cerca il profilo locale abilitato. Nessuna verifica JWT implementata manualmente. Il rinnovo avviene al recupero dell'identità Yii; il logout revoca il refresh token e apre il logout Keycloak (che pu� richiedere conferma).
+Authorization Code con PKCE S256 e state monouso con durata di dieci minuti; token e refresh token nella sessione PHP. Il backend identity verifica l'access token tramite introspezione autenticata Keycloak, controllando active, issuer, audience e scadenza, quindi cerca il profilo locale abilitato. Nessuna verifica JWT implementata manualmente. Il rinnovo avviene al recupero dell'identità Yii; il logout revoca il refresh token e apre il logout Keycloak (che può richiedere conferma).
 
 Riferimenti: https://www.keycloak.org/securing-apps/oidc-layers e https://www.keycloak.org/server/containers
